@@ -5,6 +5,9 @@ BUILD_FILE := Containerfile
 
 all: clean build
 
+configure:
+	@go install
+
 build:
 	@go build -o $(APP_NAME)
 

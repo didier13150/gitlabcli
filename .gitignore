@@ -1,6 +1,6 @@
 .gitlab.id
-.gitlab.vars*
-.gitlab.envs*
+.gitlab-vars*
+.gitlab-envs*
 .gitlab*.token
 *.bak
 glvars
