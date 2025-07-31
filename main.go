@@ -44,7 +44,7 @@ func main() {
 	var deleteIsActive = flag.Bool("delete", false, "Delete Gitlab var if not present in var file. Default is false.")
 
 	flag.Usage = func() {
-		fmt.Printf("Usage: " + os.Args[0] + " [--id <Poject ID>] [--file <VAR FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--delete]\n")
+		fmt.Printf("Usage: " + os.Args[0] + " [--id <Poject ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--delete]\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
