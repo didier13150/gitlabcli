@@ -1,2 +1,7 @@
 glvars
 .gitignore
+*.json
+.git/*
+.vscode/*
+.gitlab.id
+.gitlab-ci.yml
