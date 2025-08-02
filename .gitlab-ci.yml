@@ -1,12 +1,26 @@
 stages:
+  - lint
   - build
 
-include:
-  - component: $CI_SERVER_FQDN/components/code-quality-oss/codequality-os-scanners-integration/golangci@1.0.1
+lint-src:
+  stage: lint
+  image: docker.io/golangci/golangci-lint:v2.3.0
+  script:
+    - golangci-lint run
 
-build-image:
-  image: podman
+
+.build:
+  image: docker:dind
   stage: build
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: "tcp://docker:2376/"
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: 0
+    DOCKER_CERT_PATH: "${DOCKER_TLS_CERTDIR}/client"
+    DOCKER_DRIVER: overlay2
   before_script:
     - if [ ! -z "${DOCKER_REGISTRY_USER}" ] && [ ! -z "${DOCKER_REGISTRY_PASSWORD}" ] ;
       then
@@ -14,6 +28,23 @@ build-image:
       fi
   script:
     # Build container
-    - echo "Building ${DOCKER_REGISTRY}/${CI_PROJECT_NAME}:${CI_COMMIT_TAG}"
-    - podman build -t ${DOCKER_REGISTRY}/${CI_PROJECT_NAME}:${CI_COMMIT_TAG} -f Containerfile .
-    - docker push ${DOCKER_REGISTRY}/${CI_PROJECT_NAME}:${CI_COMMIT_TAG}
+    - echo "Building ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG}"
+    - docker build -t ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG} -f Containerfile .
+    - docker tag ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG} ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}:latest
+    - docker push --all-tags ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}
+
+build-arm64v8:
+  variables:
+    REGISTRY_PATH: arm64v8
+  extends:
+    - .build
+  tags:
+    - arm64v8
+    
+build-x86_64:
+  variables:
+    REGISTRY_PATH: x86_64
+  extends:
+    - .build
+  tags:
+    - x86_64

@@ -25,6 +25,7 @@ func main() {
 	var gitlabTokenFile string
 	var token string
 
+
 	defaultUrl := "https://gitlab.com"
 	defaultIdFile := ".gitlab.id"
 	defaultVarFile := ".gitlab-vars.json"
@@ -32,6 +33,24 @@ func main() {
 	defaultTokenFile := os.Getenv("HOME") + "/.gitlab.token"
 	defaultDebugFile := "debug.txt"
 
+	if len(os.Getenv("GLVARS_GITLAB_URL")) > 0 {
+		defaultUrl = os.Getenv("GLVARS_GITLAB_URL")
+	}
+	if len(os.Getenv("GLVARS_TOKEN_FILE")) > 0 {
+		defaultTokenFile = os.Getenv("GLVARS_TOKEN_FILE")
+	}
+	if len(os.Getenv("GLVARS_VAR_FILE")) > 0 {
+		defaultVarFile = os.Getenv("GLVARS_VAR_FILE")
+	}
+	if len(os.Getenv("GLVARS_ENV_FILE")) > 0 {
+		defaultEnvFile = os.Getenv("GLVARS_ENV_FILE")
+	}
+	if len(os.Getenv("GLVARS_ID_FILE")) > 0 {
+		defaultIdFile = os.Getenv("GLVARS_ID_FILE")
+	}
+	if len(os.Getenv("GLVARS_DEBUG_FILE")) > 0 {
+		defaultDebugFile = os.Getenv("GLVARS_DEBUG_FILE")
+	}
 	flag.StringVar(&projectId, "id", "", "Gitlab project identifiant. Default is to read it from '"+defaultIdFile+"' file in the current directory.")
 	flag.StringVar(&varsFile, "varfile", defaultVarFile, "File which contains vars. Default is '"+defaultVarFile+"' in the current directory.")
 	flag.StringVar(&envsFile, "envfile", defaultEnvFile, "File which contains envs. Default is '"+defaultEnvFile+"' in the current directory.")

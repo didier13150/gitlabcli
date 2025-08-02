@@ -1,93 +1,318 @@
 # GLVars
 
+The `glvars` program allows Gitlab variable management, i.e., it synchronizes JSON files and Gitlab data. It can do this the other way around with the `-export` option.
 
+It uses the flat file format for the project ID (`.gitlab.id` file) and the JSON format for environments (`.gitlab.env.json` file) and variables (`.gitlab.var.json` file).
 
-## Getting started
+It requires the Gitlab URL and a valid token for identification. It is not possible to pass the token directly to the application; you can only specify a file containing this token for security reasons.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+The application also has a read-only mode, in which only read calls are made: `-dryrun`
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Application Usage
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.tartarefr.eu/sources/glvars.git
-git branch -M main
-git push -uf origin main
+❯ ./glvars -help
+Usage: ./glvars [--id <Poject ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--delete]
+  -debug
+        Enable debug mode
+  -delete
+        Delete Gitlab var if not present in var file. Default is false.
+  -dryrun
+        Run in dry-run mode (read only). Default is false.
+  -envfile string
+        File which contains envs. Default is '.gitlab-envs.json' in the current directory. (default ".gitlab-envs.json")
+  -export
+        Export current variables in var file. Default is false.
+  -id string
+        Gitlab project identifiant. Default is to read it from '.gitlab.id' file in the current directory.
+  -token string
+        File which contains token to access Gitlab API. Default is '/home/didier/.gitlab.tartarefr.eu.token' (default "/home/didier/.gitlab.tartarefr.eu.token")
+  -url string
+        Gitlab URL. Default is 'https://gitlab.tartarefr.eu' (default "https://gitlab.tartarefr.eu")
+  -varfile string
+        File which contains vars. Default is '.gitlab-vars.json' in the current directory. (default ".gitlab-vars.json")
+  -verbose
+        Make application more talkative. Default is false.
 ```
 
-## Integrate with your tools
+Debug mode exports the environment and variable tables to the `debug.txt` file.
 
-- [ ] [Set up project integrations](https://gitlab.tartarefr.eu/sources/glvars/-/settings/integrations)
+## File Descriptions
 
-## Collaborate with your team
+* **Project ID** file (`.gitlab.id` file). This file contains a single-line, without spaces, corresponding to the project ID.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+    ```
+    51
+    ```
+* **Environment** file
 
-## Test and Deploy
+    ```
+    [
+      {
+        "id": 10,
+        "name": "review",
+        "state": "available",
+        "external_url": "https://app.example.com",
+        "description": "Production environment"
+      }
+    ]
+    ```
 
-Use the built-in continuous integration in GitLab.
+    | Key          | Description             | Value Type      | Default Value | Notes                   |
+    | ------------ | ----------------------- | --------------- | ------------- | ----------------------- |
+    | id           | Environment ID          | integer         |               | not editable, read-only |
+    | name         | Environment name        | non-null string |               | required                |
+    | state        | State: started/stopped  | non-null string |               | not editable, read-only |
+    | external_url | Check URL               | nullable string | _null_        | optional for creation   |
+    | description  | Environment description | nullable string | _null_        | optional for creation   |
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+* **variables** file
 
-***
+    ```
+    [
+      {
+        "key": "DEBUG_ENABLED",
+        "value": "1",
+        "description": null,
+        "environment_scope": "*",
+        "raw": true,
+        "hidden": false,
+        "protected": false,
+        "masked": false
+      }
+    ]
+    ```
+    | Key               | Description                                                         | Value Type      | Default Value | Notes                 |
+    | ----------------- | ------------------------------------------------------------------- | --------------- | ------------- | --------------------- |
+    | key               | Variable key (unique name per environment)                          | non-null string |               | required              |
+    | value             | Variable value                                                      | non-null string |               | required              |
+    | description       | Environment description                                             | nullable string | _null_        | optional for creation |
+    | environment_scope | Variable scope                                                      | non-null string | __*__         | required              |
+    | raw               | Flag indicating that the variable is uninterpretable                | boolean         | false         | required              |
+    | hidden            | Flag indicating that the variable should be hidden in the *job* log | boolean         | false         | required              |
+    | protected         | Flag indicating that the variable is a protected variable           | boolean         | false         | required              |
+    | masked            | Flag indicating that the variable is a masked variable              | boolean         | false         | required              |
 
-# Editing this README
+    * hidden: Hidden from job logs and can never be revealed in pipelines once the variable is saved.
+    * protected: Export the variable to pipelines running only on protected branches and tags.
+    * masked: Hidden from job logs, but the value can be revealed in pipelines.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Runtime
 
-## Suggestions for a good README
+The application can use environment variables to simplify command-line options.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+| Variable          | Default value       |
+| ----------------- | ------------------- |
+| GLVARS_GITLAB_URL | https://gitlab.com  |
+| GLVARS_TOKEN_FILE | $HOME/.gitlab.token |
+| GLVARS_VAR_FILE   | .gitlab-vars.json   |
+| GLVARS_ENV_FILE   | .gitlab-envs.json   |
+| GLVARS_ID_FILE    | .gitlab.id          |
+| GLVARS_DEBUG_FILE | debug.txt           |
 
-## Name
-Choose a self-explaining name for your project.
+Before using the application, you must first enter the project ID in the `.gitlab.id` file. You can use the `get-projects-id.sh` script to obtain a mapping between all projects and their IDs.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```
+GITLAB_DOMAIN=gitlab.tartarefr.eu GITLAB_PRIV_TOKEN_FILE=./.${GITLAB_DOMAIN}.token ./get-projects-id.sh
+2: sources/glvars
+1: arm64v8/gitlab-ce
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Export
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Exports existing environments and variables from Gitlab into files. This creates the `.gitlab.env.json` and `.gitlab.var.json` files. If these files already exist, they will be overwritten.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+[ Gitlab ] ---> [ Files ]
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```
+❯ ./glvars -export
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Import
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Imports environments and variables from the `.gitlab.env.json` and `.gitlab.var.json` files into Gitlab. By default, Gitlab variables not present in the files are not deleted.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+[ Files ] ---> [ Gitlab ]
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+```
+❯ ./glvars
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+To delete extra variables, add the `-delete` option.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## Examples
 
-## License
-For open source projects, say how it is licensed.
+### Starting with a project without an environment or variables.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+1. Since there are no variable or environment, we can simply create the files (there's nothing to export).
+
+    ```
+    echo -n '[]' > .gitlab.env.json
+    echo -n '[]' > .gitlab.var.json
+    ```
+2. Modify the files to specify the variables and environments. Add an environment named **production** and three **variables**, one of which is present in all environments, but overridden for the production environment.
+
+    * `.gitlab.env.json` file 
+        
+        ``` 
+        [ 
+          { 
+            "id": 0, 
+            "name": "production", 
+            "state": "available", 
+            "external_url": null, 
+            "description": "Production environment" 
+          } 
+        ] 
+        ``` 
+    * `.gitlab.var.json` file 
+        
+        ``` 
+        [ 
+          { 
+            "key": "DEBUG_ENABLED", 
+            "value": "1", 
+            "description": null, 
+            "environment_scope": "*", 
+            "raw": true, 
+            "hidden": false, 
+            "protected": false, 
+            "masked": false 
+          }, 
+          { 
+            "key": "DEBUG_ENABLED", 
+            "value": "0", 
+            "description": null, 
+            "environment_scope": "production", 
+            "raw": true, 
+            "hidden": false, 
+            "protected": false, 
+            "masked": false 
+          }, 
+          { 
+            "key": "VAR_PREFIX", 
+            "value": "GLVARS", 
+            "description": null, 
+            "environment_scope": "*", 
+            "raw": true, 
+            "hidden": false, 
+            "protected": false, 
+            "masked": false 
+          }, 
+          { 
+            "key": "GLVARS_VAR_LOCK_PREFIX", 
+            "value": "/var/lock", 
+            "description": "Prefix for lock file", 
+            "environment_scope": "*", 
+            "raw": true, 
+            "hidden": false, 
+            "protected": false, 
+            "masked": false 
+          } 
+        ] 
+        ```
+3. Import our declarations into gitlab 
+
+    ``` 
+    ❯ ./glvars 
+    2025/08/02 13:07:43 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:07:44 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:07:44 Env {0 production available <nil> Production environment} should be added 
+    2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/environments to insert env 
+    2025/08/02 13:07:44 Insert env production (0) 
+    2025/08/02 13:07:44 No env to update 
+    2025/08/02 13:07:44 No env to delete 
+    2025/08/02 13:07:44 Var {DEBUG_ENABLED 1 <nil> * true false false false} should be added 
+    2025/08/02 13:07:44 Var {DEBUG_ENABLED 0 <nil> production true false false false} should be added 
+    2025/08/02 13:07:44 Var {VAR_PREFIX GLVARS <nil> * true false false false} should be added 
+    2025/08/02 13:07:44 Var {GLVARS_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be added 
+    2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var 
+    2025/08/02 13:07:44 Insert var DEBUG_ENABLED in * env 
+    2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var 
+    2025/08/02 13:07:44 Insert var DEBUG_ENABLED in production env 
+    2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var 
+    2025/08/02 13:07:44 Insert var VAR_PREFIX in * env 
+    2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var
+    2025/08/02 13:07:44 Insert var GLVARS_VAR_LOCK_PREFIX in * env
+    2025/08/02 13:07:45 No var to update
+    2025/08/02 13:07:45 No var to delete
+    2025/08/02 13:07:45 Exit
+    ```
+4. Export from Gitlab to update the environment's **id** field.
+
+    ``` 
+    ❯ ./glvars -export 
+    2025/08/02 13:08:18 Export requested 
+    2025/08/02 13:08:18 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:08:19 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:08:19 Export current Gitlab vars to .gitlab-vars.json file 
+    2025/08/02 13:08:19 Export current Gitlab envs to .gitlab-envs.json file 
+    2025/08/02 13:08:19 Exit now because export is done 
+    ```
+5. Deleting the variable **GLVARS_VAR_LOCK_PREFIX** in the `.gitlab.var.json` file 
+
+    ``` 
+    [ 
+      { 
+        "key": "DEBUG_ENABLED", 
+        "value": "1", 
+        "description": null, 
+        "environment_scope": "*", 
+        "raw": true, 
+        "hidden": false, 
+        "protected": false, 
+        "masked": false 
+      }, 
+      { 
+        "key": "DEBUG_ENABLED", 
+        "value": "0", 
+        "description": null, 
+        "environment_scope": "production", 
+        "raw": true, 
+        "hidden": false, 
+        "protected": false, 
+        "masked": false 
+      }, 
+      { 
+        "key": "VAR_PREFIX", 
+        "value": "GLVARS", 
+        "description": null, 
+        "environment_scope": "*", 
+        "raw": true, 
+        "hidden": false,
+        "protected": false,
+        "masked": false
+      }
+    ]
+    ```
+6. Synchronization between files and GitLab. The application recognizes the deletion but cannot find the flag allowing the deletion operation in the command line.
+
+    ``` 
+    ❯ ./glvars 
+    2025/08/02 13:21:14 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:21:14 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:21:14 No env to insert 
+    2025/08/02 13:21:14 No env to update 
+    2025/08/02 13:21:14 No env to delete 
+    2025/08/02 13:21:14 Var {GLVARS_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be deleted 
+    2025/08/02 13:21:14 No var to insert 
+    2025/08/02 13:21:14 No var to update 
+    2025/08/02 13:21:14 1 var(s) may be deleted, but delete flag in command line is not set 
+    2025/08/02 13:21:14 Exit 
+    ```
+7. Sync between files and gitlab with delete option 
+
+    ``` 
+    ❯ ./glvars -delete 
+    2025/08/02 13:22:32 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:22:33 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu 
+    2025/08/02 13:22:33 No env to insert 
+    2025/08/02 13:22:33 No env to update 
+    2025/08/02 13:22:33 No env to delete 
+    2025/08/02 13:22:33 Var {GLVARS_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be deleted 
+    2025/08/02 13:22:33 No var to insert 
+    2025/08/02 13:22:33 No var to update 
+    2025/08/02 13:22:33 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables/GLVARS_VAR_LOCK_PREFIX?filter[environment_scope]=* to delete var 
+    2025/08/02 13:22:33 Delete var GLVARS_VAR_LOCK_PREFIX in * env 
+    2025/08/02 13:22:33 Exit 
+    ```
