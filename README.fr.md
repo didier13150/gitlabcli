@@ -8,34 +8,42 @@ Il a besoin de l'url du gitlab, ainsi que d'un token valide pour l'identificatio
 
 L'application possède également un mode lecture seule, dans lequel seul les appels de lecture sont effectués: `-dryrun`
 
+L'application peut également obtenir l'identifiant du projet à partir d'un export des projets (fichier `.gitlab.projects.json`)
+
 ## Usage de l'application
 
 ```
 ❯ ./glvars -help
-Usage: ./glvars [--id <Poject ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--delete]
+Usage: ./glvars [--id <Poject ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--projectfile <PROJECT FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--export-projects] [--delete]
   -debug
         Enable debug mode
   -delete
-        Delete Gitlab var if not present in var file. Default is false.
+        Delete Gitlab var if not present in var file.
   -dryrun
-        Run in dry-run mode (read only). Default is false.
+        Run in dry-run mode (read only).
   -envfile string
-        File which contains envs. Default is '.gitlab-envs.json' in the current directory. (default ".gitlab-envs.json")
+        File which contains envs. (default ".gitlab-envs.json")
   -export
-        Export current variables in var file. Default is false.
+        Export current variables in var file.
+  -export-projects
+        Export current projects in project file.
   -id string
-        Gitlab project identifiant. Default is to read it from '.gitlab.id' file in the current directory.
+        Gitlab project identifiant.
+  -projectfile string
+        File which contains projects. (default "$HOME/.gitlab-projects.json")
   -token string
-        File which contains token to access Gitlab API. Default is '/home/didier/.gitlab.tartarefr.eu.token' (default "/home/didier/.gitlab.tartarefr.eu.token")
+        File which contains token to access Gitlab API. (default "$HOME/.gitlab.token")
   -url string
-        Gitlab URL. Default is 'https://gitlab.tartarefr.eu' (default "https://gitlab.tartarefr.eu")
+        Gitlab URL. (default "https://gitlab.com")
   -varfile string
-        File which contains vars. Default is '.gitlab-vars.json' in the current directory. (default ".gitlab-vars.json")
+        File which contains vars. (default ".gitlab-vars.json")
   -verbose
-        Make application more talkative. Default is false.
+        Make application more talkative.
 ```
 
 Le mode debug exporte les tableaux des environnements et des variables dans le fichier `debug.txt`
+
+Pour obtenir automatiquement l'identifiant du projet, il faut exporter les données concernant les projets avec l'option `-export-projects`
 
 ## Description des fichiers
 
@@ -99,18 +107,49 @@ Le mode debug exporte les tableaux des environnements et des variables dans le f
     * protected: Exporter la variable vers les pipelines exécutés uniquement sur des branches et des *tags* protégés.
     * masked: Masqué dans les journaux des *jobs*, mais la valeur peut être révélée dans les pipelines.
 
+* Fichier concernant les projets, obtenu avec l'option `-export-projects`. Ce fichier peut être mutualisé pour tous les projets afin de s'affranchir la création de fichier `.gitlab.id` dans tous les dépôts locaux. 
+
+    ```
+    [
+      {
+        "id": 2,
+        "name": "GLVars",
+        "description": null,
+        "path": "glvars",
+        "name_with_namespace": "Sources / GLVars",
+        "path_with_namespace": "sources/glvars",
+        "ssh_url_to_repo": "git@gitlab.tartarefr.eu:sources/glvars.git",
+        "http_url_to_repo": "https://gitlab.tartarefr.eu/sources/glvars.git",
+        "web_url": "https://gitlab.tartarefr.eu/sources/glvars",
+        "visibility": "public"
+      },
+      {
+        "id": 1,
+        "name": "Gitlab Community Edition",
+        "description": null,
+        "path": "gitlab-ce",
+        "name_with_namespace": "ARM 64 version 8 / Gitlab Community Edition",
+        "path_with_namespace": "arm64v8/gitlab-ce",
+        "ssh_url_to_repo": "git@gitlab.tartarefr.eu:arm64v8/gitlab-ce.git",
+        "http_url_to_repo": "https://gitlab.tartarefr.eu/arm64v8/gitlab-ce.git",
+        "web_url": "https://gitlab.tartarefr.eu/arm64v8/gitlab-ce",
+        "visibility": "public"
+      }
+    ]
+    ```
 ## Utilisation
 
 L'application peut utiliser des variables d'environnement afin de simplifier les options de la ligne de commande.
 
-| Variable          | valeur par défaut   |
-| ----------------- | ------------------- |
-| GLVARS_GITLAB_URL | https://gitlab.com  |
-| GLVARS_TOKEN_FILE | $HOME/.gitlab.token |
-| GLVARS_VAR_FILE   | .gitlab-vars.json   |
-| GLVARS_ENV_FILE   | .gitlab-envs.json   |
-| GLVARS_ID_FILE    | .gitlab.id          |
-| GLVARS_DEBUG_FILE | debug.txt           |
+| Variable            | valeur par défaut           |
+| ------------------- | --------------------------- |
+| GLVARS_GITLAB_URL   | https://gitlab.com          |
+| GLVARS_TOKEN_FILE   | $HOME/.gitlab.token         |
+| GLVARS_PROJECT_FILE | $HOME/.gitlab.projects.json |
+| GLVARS_VAR_FILE     | .gitlab-vars.json           |
+| GLVARS_ENV_FILE     | .gitlab-envs.json           |
+| GLVARS_ID_FILE      | .gitlab.id                  |
+| GLVARS_DEBUG_FILE   | debug.txt                   |
 
 Avant d'utiliser l'application, on doit d'abord inscrire l'identifiant du projet dans le fichier `.gitlab.id`. On peut se servir du script `get-projects-id.sh` afin d'obtenir une correspondance entre tous les projets et leur identifiant.
 

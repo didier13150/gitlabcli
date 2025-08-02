@@ -11,6 +11,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"gopkg.in/ini.v1"
 )
 
 var verbose bool
@@ -21,15 +23,16 @@ func main() {
 	var projectId string
 	var varsFile string
 	var envsFile string
+	var projectsFile string
 	var gitlabUrl string
 	var gitlabTokenFile string
 	var token string
-
 
 	defaultUrl := "https://gitlab.com"
 	defaultIdFile := ".gitlab.id"
 	defaultVarFile := ".gitlab-vars.json"
 	defaultEnvFile := ".gitlab-envs.json"
+	defaultProjectsFile := os.Getenv("HOME") + "/.gitlab-projects.json"
 	defaultTokenFile := os.Getenv("HOME") + "/.gitlab.token"
 	defaultDebugFile := "debug.txt"
 
@@ -45,25 +48,30 @@ func main() {
 	if len(os.Getenv("GLVARS_ENV_FILE")) > 0 {
 		defaultEnvFile = os.Getenv("GLVARS_ENV_FILE")
 	}
+	if len(os.Getenv("GLVARS_PROJECT_FILE")) > 0 {
+		defaultProjectsFile = os.Getenv("GLVARS_PROJECT_FILE")
+	}
 	if len(os.Getenv("GLVARS_ID_FILE")) > 0 {
 		defaultIdFile = os.Getenv("GLVARS_ID_FILE")
 	}
 	if len(os.Getenv("GLVARS_DEBUG_FILE")) > 0 {
 		defaultDebugFile = os.Getenv("GLVARS_DEBUG_FILE")
 	}
-	flag.StringVar(&projectId, "id", "", "Gitlab project identifiant. Default is to read it from '"+defaultIdFile+"' file in the current directory.")
-	flag.StringVar(&varsFile, "varfile", defaultVarFile, "File which contains vars. Default is '"+defaultVarFile+"' in the current directory.")
-	flag.StringVar(&envsFile, "envfile", defaultEnvFile, "File which contains envs. Default is '"+defaultEnvFile+"' in the current directory.")
-	flag.StringVar(&gitlabUrl, "url", defaultUrl, "Gitlab URL. Default is '"+defaultUrl+"'")
-	flag.StringVar(&gitlabTokenFile, "token", defaultTokenFile, "File which contains token to access Gitlab API. Default is '"+defaultTokenFile+"'")
-	flag.BoolVar(&verbose, "verbose", false, "Make application more talkative. Default is false.")
+	flag.StringVar(&projectId, "id", "", "Gitlab project identifiant.")
+	flag.StringVar(&varsFile, "varfile", defaultVarFile, "File which contains vars.")
+	flag.StringVar(&envsFile, "envfile", defaultEnvFile, "File which contains envs.")
+	flag.StringVar(&projectsFile, "projectfile", defaultProjectsFile, "File which contains projects.")
+	flag.StringVar(&gitlabUrl, "url", defaultUrl, "Gitlab URL.")
+	flag.StringVar(&gitlabTokenFile, "token", defaultTokenFile, "File which contains token to access Gitlab API.")
+	flag.BoolVar(&verbose, "verbose", false, "Make application more talkative.")
 	flag.BoolVar(&debug, "debug", false, "Enable debug mode")
-	var dryrun = flag.Bool("dryrun", false, "Run in dry-run mode (read only). Default is false.")
-	var export = flag.Bool("export", false, "Export current variables in var file. Default is false.")
-	var deleteIsActive = flag.Bool("delete", false, "Delete Gitlab var if not present in var file. Default is false.")
+	var dryrun = flag.Bool("dryrun", false, "Run in dry-run mode (read only).")
+	var export = flag.Bool("export", false, "Export current variables in var file.")
+	var exportProjectsOnly = flag.Bool("export-projects", false, "Export current projects in project file.")
+	var deleteIsActive = flag.Bool("delete", false, "Delete Gitlab var if not present in var file.")
 
 	flag.Usage = func() {
-		fmt.Printf("Usage: " + os.Args[0] + " [--id <Poject ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--delete]\n")
+		fmt.Printf("Usage: " + os.Args[0] + " [--id <Poject ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--projectfile <PROJECT FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--export-projects] [--delete]\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -77,17 +85,59 @@ func main() {
 	if *export {
 		log.Print("Export requested")
 	}
-
-	if projectId == "" {
-		projectId = readFromFile(defaultIdFile, "project Id")
-	}
-	if verbose {
-		log.Printf("Get projectId: %s", projectId)
+	if *exportProjectsOnly {
+		log.Print("Export projects requested")
 	}
 
 	token = readFromFile(gitlabTokenFile, "token")
 	if verbose {
 		log.Printf("Get token from: %s", gitlabTokenFile)
+	}
+
+	if projectsFile == "" {
+		projectsFile = defaultProjectsFile
+	}
+	if *exportProjectsOnly {
+		log.Printf("Export current Gitlab projects to %s file", projectsFile)
+		projectsOnGitlab, _ := getProjectsFromGitlab(gitlabUrl, token)
+		exportProjects(projectsFile, projectsOnGitlab)
+		log.Print("Exit now because export is done")
+		os.Exit(0)
+	}
+
+	projectfile, err := os.OpenFile(projectsFile, os.O_RDONLY, 0644)
+	if err == nil {
+		projects := importProjects(projectsFile)
+		err = projectfile.Close()
+		if err != nil {
+			log.Fatalln("Cannot close project file")
+		}
+		repoUrl := getGitUrl("origin")
+		if verbose {
+			log.Printf("Get git repository url: %s", repoUrl)
+		}
+		id := getProjectIdByRepoUrl(repoUrl, projects)
+		if id > 0 {
+			projectId = strconv.Itoa(id)
+			if verbose {
+				log.Printf("Get projectId: %s from git repository URL %s", projectId, repoUrl)
+			}
+
+		}
+	} else {
+		if verbose {
+			log.Printf("Cannot open %s file", projectsFile)
+		}
+	}
+
+	if projectId == "" {
+		projectId = readFromFile(defaultIdFile, "project Id")
+		if verbose {
+			log.Printf("Get projectId: %s from %s file", projectId, defaultIdFile)
+		}
+	}
+	if verbose {
+		log.Printf("Using projectId: %s", projectId)
 	}
 
 	log.Printf("Fetching envs from gitlab with URL %s", gitlabUrl)
@@ -327,4 +377,17 @@ func writeFile(filename string, json []byte) {
 		log.Println("Export to file", filename, err)
 		return
 	}
+}
+
+func getGitUrl(remote string) string {
+	inidata, err := ini.Load(".git/config")
+	if err != nil {
+		log.Fatalf("Fail to read file: %v", err)
+	}
+	section := inidata.Section("remote \"" + remote + "\"")
+	url := section.Key("url").String()
+	if verbose {
+		log.Printf("On remote %s, found url %s", remote, url)
+	}
+	return url
 }

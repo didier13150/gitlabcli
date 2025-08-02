@@ -3,7 +3,7 @@ BUILD_FILE := Containerfile
 
 .PHONY: all build clean
 
-all: clean build
+all: clean configure build
 
 configure:
 	@go install
@@ -13,3 +13,6 @@ build:
 
 clean:
 	@rm -f $(APP_NAME)
+
+lint:
+	@golangci-lint run
