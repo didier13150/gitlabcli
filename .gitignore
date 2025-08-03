@@ -4,5 +4,5 @@
 .gitlab-projects*
 .gitlab*.token
 *.bak
-glvars
+glcli
 debug.txt

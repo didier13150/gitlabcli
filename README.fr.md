@@ -1,6 +1,6 @@
-# GLVars
+# GLCli
 
-Le programme `glvars` permet une gestion des variables Gitlab, c'est à dire qu'il synchronise les fichiers json et les données du gitlab. Il peut le faire dans l'autre sens avec l'option `-export`.
+Le programme `glcli` permet une gestion des variables Gitlab, c'est à dire qu'il synchronise les fichiers json et les données du gitlab. Il peut le faire dans l'autre sens avec l'option `-export`.
 
 Il utilise le format de fichier plat pour l'id du projet (fichier `.gitlab.id`) et le format JSON pour les environnements (fichier `.gitlab.env.json`) et les variables (fichier `.gitlab.var.json`).
 
@@ -13,8 +13,8 @@ L'application peut également obtenir l'identifiant du projet à partir d'un exp
 ## Usage de l'application
 
 ```
-❯ ./glvars -help
-Usage: ./glvars [--id <Poject ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--projectfile <PROJECT FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--export-projects] [--delete]
+❯ ./glcli -help
+Usage: ./glcli [--id <Project ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--projectfile <PROJECT FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--export-projects] [--delete]
   -debug
         Enable debug mode
   -delete
@@ -113,14 +113,14 @@ Pour obtenir automatiquement l'identifiant du projet, il faut exporter les donn�
     [
       {
         "id": 2,
-        "name": "GLVars",
+        "name": "GLCli",
         "description": null,
-        "path": "glvars",
-        "name_with_namespace": "Sources / GLVars",
-        "path_with_namespace": "sources/glvars",
-        "ssh_url_to_repo": "git@gitlab.tartarefr.eu:sources/glvars.git",
-        "http_url_to_repo": "https://gitlab.tartarefr.eu/sources/glvars.git",
-        "web_url": "https://gitlab.tartarefr.eu/sources/glvars",
+        "path": "glcli",
+        "name_with_namespace": "Sources / GLCli",
+        "path_with_namespace": "sources/glcli",
+        "ssh_url_to_repo": "git@gitlab.tartarefr.eu:sources/glcli.git",
+        "http_url_to_repo": "https://gitlab.tartarefr.eu/sources/glcli.git",
+        "web_url": "https://gitlab.tartarefr.eu/sources/glcli",
         "visibility": "public"
       },
       {
@@ -141,21 +141,21 @@ Pour obtenir automatiquement l'identifiant du projet, il faut exporter les donn�
 
 L'application peut utiliser des variables d'environnement afin de simplifier les options de la ligne de commande.
 
-| Variable            | valeur par défaut           |
-| ------------------- | --------------------------- |
-| GLVARS_GITLAB_URL   | https://gitlab.com          |
-| GLVARS_TOKEN_FILE   | $HOME/.gitlab.token         |
-| GLVARS_PROJECT_FILE | $HOME/.gitlab.projects.json |
-| GLVARS_VAR_FILE     | .gitlab-vars.json           |
-| GLVARS_ENV_FILE     | .gitlab-envs.json           |
-| GLVARS_ID_FILE      | .gitlab.id                  |
-| GLVARS_DEBUG_FILE   | debug.txt                   |
+| Variable           | valeur par défaut           |
+| ------------------ | --------------------------- |
+| GLCLI_GITLAB_URL   | https://gitlab.com          |
+| GLCLI_TOKEN_FILE   | $HOME/.gitlab.token         |
+| GLCLI_PROJECT_FILE | $HOME/.gitlab.projects.json |
+| GLCLI_VAR_FILE     | .gitlab-vars.json           |
+| GLCLI_ENV_FILE     | .gitlab-envs.json           |
+| GLCLI_ID_FILE      | .gitlab.id                  |
+| GLCLI_DEBUG_FILE   | debug.txt                   |
 
 Avant d'utiliser l'application, on doit d'abord inscrire l'identifiant du projet dans le fichier `.gitlab.id`. On peut se servir du script `get-projects-id.sh` afin d'obtenir une correspondance entre tous les projets et leur identifiant.
 
 ```
 GITLAB_DOMAIN=gitlab.tartarefr.eu GITLAB_PRIV_TOKEN_FILE=./.${GITLAB_DOMAIN}.token ./get-projects-id.sh 
-2 : sources/glvars
+2 : sources/glcli
 1 : arm64v8/gitlab-ce
 ```
 
@@ -166,7 +166,7 @@ Exporte les environnements et les variables existants depuis gitlab dans des fic
 [ Gitlab ] ---> [ Fichiers ]
 
 ```
-❯ ./glvars -export
+❯ ./glcli -export
 ```
 
 ### Import
@@ -176,7 +176,7 @@ Importe les environnements et les variables depuis les fichiers `.gitlab.env.jso
 [ Fichiers ] ---> [ Gitlab ]
 
 ```
-❯ ./glvars
+❯ ./glcli
 ```
 
 Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
@@ -234,7 +234,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
           },
           {
             "key": "VAR_PREFIX",
-            "value": "GLVARS",
+            "value": "GLCLI",
             "description": null,
             "environment_scope": "*",
             "raw": true,
@@ -243,7 +243,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
             "masked": false
           },
           {
-            "key": "GLVARS_VAR_LOCK_PREFIX",
+            "key": "GLCLI_VAR_LOCK_PREFIX",
             "value": "/var/lock",
             "description": "Prefix for lock file",
             "environment_scope": "*",
@@ -257,7 +257,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
 3. Import de nos déclarations dans gitlab
 
     ```
-    ❯ ./glvars 
+    ❯ ./glcli 
     2025/08/02 13:07:43 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu
     2025/08/02 13:07:44 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu
     2025/08/02 13:07:44 Env {0 production available <nil> Production environment} should be added
@@ -267,8 +267,8 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
     2025/08/02 13:07:44 No env to delete
     2025/08/02 13:07:44 Var {DEBUG_ENABLED 1 <nil> * true false false false} should be added
     2025/08/02 13:07:44 Var {DEBUG_ENABLED 0 <nil> production true false false false} should be added
-    2025/08/02 13:07:44 Var {VAR_PREFIX GLVARS <nil> * true false false false} should be added
-    2025/08/02 13:07:44 Var {GLVARS_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be added
+    2025/08/02 13:07:44 Var {VAR_PREFIX GLCLI <nil> * true false false false} should be added
+    2025/08/02 13:07:44 Var {GLCLI_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be added
     2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var
     2025/08/02 13:07:44 Insert var DEBUG_ENABLED in * env
     2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var
@@ -276,7 +276,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
     2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var
     2025/08/02 13:07:44 Insert var VAR_PREFIX in * env
     2025/08/02 13:07:44 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables to insert var
-    2025/08/02 13:07:44 Insert var GLVARS_VAR_LOCK_PREFIX in * env
+    2025/08/02 13:07:44 Insert var GLCLI_VAR_LOCK_PREFIX in * env
     2025/08/02 13:07:45 No var to update
     2025/08/02 13:07:45 No var to delete
     2025/08/02 13:07:45 Exit
@@ -284,7 +284,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
 4. Export depuis gitlab afin de mettre à jour le champs **id** de l'environnement.
 
     ```
-    ❯ ./glvars -export
+    ❯ ./glcli -export
     2025/08/02 13:08:18 Export requested
     2025/08/02 13:08:18 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu
     2025/08/02 13:08:19 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu
@@ -292,7 +292,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
     2025/08/02 13:08:19 Export current Gitlab envs to .gitlab-envs.json file
     2025/08/02 13:08:19 Exit now because export is done
     ```
-5. Suppresion de la variable **GLVARS_VAR_LOCK_PREFIX** dans le fichier `.gitlab.var.json`
+5. Suppresion de la variable **GLCLI_VAR_LOCK_PREFIX** dans le fichier `.gitlab.var.json`
 
     ```
     [
@@ -318,7 +318,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
       },
       {
         "key": "VAR_PREFIX",
-        "value": "GLVARS",
+        "value": "GLCLI",
         "description": null,
         "environment_scope": "*",
         "raw": true,
@@ -331,13 +331,13 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
 6. Synchronisation entre les fichiers et le gitlab. L'application reconnait bien la suppression mais ne trouve pas le drapeau permettant l'opération de suppression dans le ligne de commande.
 
     ```
-    ❯ ./glvars 
+    ❯ ./glcli 
     2025/08/02 13:21:14 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu
     2025/08/02 13:21:14 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu
     2025/08/02 13:21:14 No env to insert
     2025/08/02 13:21:14 No env to update
     2025/08/02 13:21:14 No env to delete
-    2025/08/02 13:21:14 Var {GLVARS_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be deleted
+    2025/08/02 13:21:14 Var {GLCLI_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be deleted
     2025/08/02 13:21:14 No var to insert
     2025/08/02 13:21:14 No var to update
     2025/08/02 13:21:14 1 var(s) may be deleted, but delete flag in command line is not set
@@ -346,16 +346,16 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
 7. Synchronisation entre les fichiers et le gitlab avec l'option de suppression
 
     ```
-    ❯ ./glvars -delete
+    ❯ ./glcli -delete
     2025/08/02 13:22:32 Fetching envs from gitlab with URL https://gitlab.tartarefr.eu
     2025/08/02 13:22:33 Fetching vars from gitlab with URL https://gitlab.tartarefr.eu
     2025/08/02 13:22:33 No env to insert
     2025/08/02 13:22:33 No env to update
     2025/08/02 13:22:33 No env to delete
-    2025/08/02 13:22:33 Var {GLVARS_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be deleted
+    2025/08/02 13:22:33 Var {GLCLI_VAR_LOCK_PREFIX /var/lock Prefix for lock file * true false false false} should be deleted
     2025/08/02 13:22:33 No var to insert
     2025/08/02 13:22:33 No var to update
-    2025/08/02 13:22:33 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables/GLVARS_VAR_LOCK_PREFIX?filter[environment_scope]=* to delete var
-    2025/08/02 13:22:33 Delete var GLVARS_VAR_LOCK_PREFIX in * env
+    2025/08/02 13:22:33 Use URL https://gitlab.tartarefr.eu/api/v4/projects/52/variables/GLCLI_VAR_LOCK_PREFIX?filter[environment_scope]=* to delete var
+    2025/08/02 13:22:33 Delete var GLCLI_VAR_LOCK_PREFIX in * env
     2025/08/02 13:22:33 Exit
     ```

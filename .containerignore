@@ -1,4 +1,4 @@
-glvars
+glcli
 .gitignore
 *.json
 .git/*

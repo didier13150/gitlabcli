@@ -9,24 +9,25 @@ ENV PATH=/go/bin:$PATH
 RUN mkdir build
 
 COPY *.go  go.* build/
+COPY gitlabcli/ build/gitlabcli
 RUN cd build && \
     go install && \
     CGO_ENABLED=0 GOOS=linux go build \
       -v  \
-      -o glvars \
+      -o glcli \
       -ldflags="-s -w" && \
-    upx --ultra-brute -q glvars && upx -t glvars
+    upx --ultra-brute -q glcli && upx -t glcli
 
 #-----------------------------------------------------------------------------
 
 FROM scratch
 
 LABEL org.opencontainers.image.authors="Didier FABERT <didier.fabert@gmail.com>"
-LABEL eu.tartarefr.glvars.version=1.0.3
+LABEL eu.tartarefr.glcli.version=1.0.4
 
-COPY --from=build build/glvars /glvars
+COPY --from=build build/glcli /glcli
 COPY LICENSE /LICENSE
 COPY README.fr.md /README.fr.md
 COPY README.md /README.md
 
-ENTRYPOINT [ "/glvars" ]
+ENTRYPOINT [ "/glcli" ]
