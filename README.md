@@ -1,6 +1,6 @@
 # GLCli
 
-The `glcli` program allows Gitlab variable management, i.e., it synchronizes JSON files and Gitlab data. It can do this the other way around with the `-export` option.
+The `glcli` program allows Gitlab variable and environment management, i.e., it synchronizes JSON files and Gitlab data. It can do this the other way around with the `-export` option.
 
 It uses the flat file format for the project ID (`.gitlab.id` file) and the JSON format for environments (`.gitlab.env.json` file) and variables (`.gitlab.var.json` file).
 
@@ -14,7 +14,7 @@ The application can also get the project ID from a project export data (`.gitlab
 
 ```
 ❯ ./glcli -help
-Usage: ./glcli [--id <Project ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>] [--projectfile <PROJECT FILE>] [--token <TOKEN FILE>] [--dryrun] [--export] [--export-projects] [--delete]
+Usage: ./glcli [options]
   -debug
         Enable debug mode
   -delete
@@ -29,8 +29,12 @@ Usage: ./glcli [--id <Project ID>] [--varfile <VAR FILE>] [--envfile <ENV FILE>]
         Export current projects in project file.
   -id string
         Gitlab project identifiant.
+  -idfile string
+        Gitlab project identifiant file. (default ".gitlab.id")
   -projectfile string
-        File which contains projects. (default "$HOME/.gitlab-projects.json")
+        File which contains projects. (default "$HOME/.gitlab-projects.json"))
+  -remote string
+        Git remote name.
   -token string
         File which contains token to access Gitlab API. (default "$HOME/.gitlab.token")
   -url string
@@ -148,13 +152,7 @@ The application can use environment variables to simplify command-line options.
 | GLCLI_ID_FILE      | .gitlab.id                  |
 | GLCLI_DEBUG_FILE   | debug.txt                   |
 
-Before using the application, you must first enter the project ID in the `.gitlab.id` file. You can use the `get-projects-id.sh` script to obtain a mapping between all projects and their IDs.
-
-```
-GITLAB_DOMAIN=gitlab.tartarefr.eu GITLAB_PRIV_TOKEN_FILE=./.${GITLAB_DOMAIN}.token ./get-projects-id.sh
-2: sources/glcli
-1: arm64v8/gitlab-ce
-```
+Before using the application, you must first enter the project ID in the `.gitlab.id` file or using an export of projects.
 
 ### Export
 
