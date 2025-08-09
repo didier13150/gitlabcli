@@ -1,0 +1,12 @@
+{
+ "makefile.configurations": [
+     {
+         "name": "Default",
+         "makeArgs": ["-verbose"]
+     },
+     {
+         "name": "Debug Mode",
+         "makeArgs": ["-verbose", "-debug"]
+     }
+ ]
+}
