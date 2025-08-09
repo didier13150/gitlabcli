@@ -74,9 +74,9 @@ func NewGLCli() GLCli {
 		glcli.Config.DebugFile = "debug.txt"
 	}
 	if len(os.Getenv("GLCLI_REMOTE_NAME")) > 0 {
-		glcli.Config.DebugFile = os.Getenv("GLCLI_REMOTE_NAME")
+		glcli.Config.RemoteName = os.Getenv("GLCLI_REMOTE_NAME")
 	} else {
-		glcli.Config.DebugFile = "origin"
+		glcli.Config.RemoteName = "origin"
 	}
 
 	glcli.Config.DebugMode = false
@@ -117,7 +117,7 @@ func (glcli *GLCli) Run() {
 		}
 		repoUrl := getGitUrl(glcli.RemoteName, glcli.Config.VerboseMode)
 		if glcli.Config.VerboseMode {
-			log.Printf("Get git repository url: %s", repoUrl)
+			log.Printf("Get git repository url for remote %s: %s", glcli.RemoteName, repoUrl)
 		}
 		id := glcli.projects.GetProjectIdByRepoUrl(repoUrl)
 		if id > 0 {
@@ -125,7 +125,6 @@ func (glcli *GLCli) Run() {
 			if glcli.Config.VerboseMode {
 				log.Printf("Get projectId: %s from git repository URL %s", glcli.ProjectId, repoUrl)
 			}
-
 		}
 	} else {
 		if glcli.Config.VerboseMode {
