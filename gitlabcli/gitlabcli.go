@@ -119,11 +119,13 @@ func (glcli *GLCli) Run() {
 		if glcli.Config.VerboseMode {
 			log.Printf("Get git repository url for remote %s: %s", glcli.RemoteName, repoUrl)
 		}
-		id := glcli.projects.GetProjectIdByRepoUrl(repoUrl)
-		if id > 0 {
-			glcli.ProjectId = strconv.Itoa(id)
-			if glcli.Config.VerboseMode {
-				log.Printf("Get projectId: %s from git repository URL %s", glcli.ProjectId, repoUrl)
+		if glcli.ProjectId == "" {
+			id := glcli.projects.GetProjectIdByRepoUrl(repoUrl)
+			if id > 0 {
+				glcli.ProjectId = strconv.Itoa(id)
+				if glcli.Config.VerboseMode {
+					log.Printf("Get projectId: %s from git repository URL %s", glcli.ProjectId, repoUrl)
+				}
 			}
 		}
 	} else {

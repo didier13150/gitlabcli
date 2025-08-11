@@ -6,3 +6,4 @@
 *.bak
 glcli
 debug.txt
+*.log

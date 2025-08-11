@@ -12,7 +12,14 @@ import (
 	"time"
 )
 
-var groups = []string{"CPP Language", "Go Language", "Perl Language", "Python Language", "PHP Language", "C Sharp Language"}
+var groups = []string{
+	"CPP Language",
+	"Go Language",
+	"Perl Language",
+	"Python Language",
+	"PHP Language",
+	"C Sharp Language",
+}
 var names = []string{
 	"Wolfgang Amadeus Mozart",
 	"Johann Sebastian Bach",
@@ -92,11 +99,11 @@ func defaultdhandler(w http.ResponseWriter, r *http.Request) {
 		projectId := 0
 		if len(parts) >= 4 {
 			projectId, _ = strconv.Atoi(parts[3])
-			log.Printf("Project ID: %d", projectId)
+			// log.Printf("Project ID: %d", projectId)
 		}
 		if len(parts) >= 5 {
 			kind = parts[4]
-			log.Printf("Kind: %s", kind)
+			// log.Printf("Kind: %s", kind)
 		}
 		switch kind {
 		case "environments":
@@ -254,7 +261,7 @@ func generateVarList() []GLVar {
 
 func generateEnvList(projectId int) []GLEnv {
 	var environments []GLEnv
-	var envs = []string{"*", "Staging", "Production"}
+	var envs = []string{"Staging", "Production"}
 	id := projectId*2 - 1
 	for _, env := range envs {
 		var environment GLEnv
