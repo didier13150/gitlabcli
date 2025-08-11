@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"tartarefr.eu/gitlabcli"
+	"github.com/didier13150/gitlabcli"
 )
 
 func main() {
