@@ -1,5 +1,6 @@
 stages:
   - lint
+  - test
   - build
 
 lint-src:
@@ -8,9 +9,17 @@ lint-src:
   script:
     - golangci-lint run
 
+test-src:
+  stage: test
+  image: docker.io/library/golang:1.21
+  before_script:
+    - make
+  script:
+    - make test
 
-.build:
-  image: docker:dind
+
+.build-image:
+  image: docker.io/library/docker:dind
   stage: build
   services:
     - name: docker:dind
@@ -33,18 +42,18 @@ lint-src:
     - docker tag ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG} ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}:latest
     - docker push --all-tags ${DOCKER_REGISTRY}/${REGISTRY_PATH}/${CI_PROJECT_NAME}
 
-build-arm64v8:
+build-image-arm64v8:
   variables:
     REGISTRY_PATH: arm64v8
   extends:
-    - .build
+    - .build-image
   tags:
     - arm64v8
     
-build-x86_64:
+build-image-x86_64:
   variables:
     REGISTRY_PATH: x86_64
   extends:
-    - .build
+    - .build-image
   tags:
     - x86_64

@@ -21,4 +21,4 @@ lint:
 	@golangci-lint run
 
 test: build
-	@bash -c "test/glsimulator/$(SIMU_NAME) 1>glsimulator.log 2>&1 &" && cd gitlabcli && go test ; killall $(SIMU_NAME)
+	@bash -c "test/glsimulator/$(SIMU_NAME) 1>glsimulator.log 2>&1 &" && cd gitlabcli && go test ; killall $(SIMU_NAME) 1>/dev/null 2>&1 ||:

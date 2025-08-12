@@ -105,7 +105,7 @@ func (glcli *GLCli) Run() {
 		glcli.projects.GetProjectsFromGitlab()
 		glcli.projects.ExportProjects(glcli.Config.ProjectsFile)
 		log.Print("Exit now because project export is done")
-		os.Exit(0)
+		return
 	}
 
 	projectfile, err := os.OpenFile(glcli.Config.ProjectsFile, os.O_RDONLY, 0644)
@@ -159,7 +159,7 @@ func (glcli *GLCli) Run() {
 		log.Printf("Export current Gitlab envs to %s file", glcli.Config.EnvsFile)
 		glcli.envs.ExportEnvs(glcli.Config.EnvsFile)
 		log.Print("Exit now because export is done")
-		os.Exit(0)
+		return
 	}
 
 	if glcli.Config.VerboseMode {
