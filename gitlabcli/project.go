@@ -8,11 +8,13 @@ import (
 )
 
 type GitlabProject struct {
-	UrlBase string
-	Token   string
-	Verbose bool
-	Glapi   GLApi
-	Data    []GitlabProjectData
+	UrlBase        string
+	Token          string
+	Verbose        bool
+	MembershipOnly bool
+	SimpleRequest  bool
+	Glapi          GLApi
+	Data           []GitlabProjectData
 }
 
 func NewGitlabProject(UrlBase string, Token string, Verbose bool) GitlabProject {
@@ -20,6 +22,8 @@ func NewGitlabProject(UrlBase string, Token string, Verbose bool) GitlabProject 
 	glproj.UrlBase = UrlBase
 	glproj.Token = Token
 	glproj.Verbose = Verbose
+	glproj.MembershipOnly = true
+	glproj.SimpleRequest = false
 	glproj.Data = []GitlabProjectData{}
 	glproj.Glapi = NewGLApi(UrlBase, Token, Verbose)
 	return glproj
@@ -34,8 +38,16 @@ func (glproj *GitlabProject) GetProjectsFromGitlab() error {
 	var err error
 	var resp []byte
 
+	parameters := "per_page="+strconv.Itoa(perPage)
+	if glproj.MembershipOnly {
+		parameters += "&membership=1"
+	}
+	if glproj.SimpleRequest {
+		parameters += "&simple=1"
+	}
+
 	for currentPage <= nbPage {
-		resp, nbPage, err = glproj.Glapi.CallGitlabApi("/api/v4/projects?per_page="+strconv.Itoa(perPage)+"&page="+strconv.Itoa(currentPage), http.MethodGet, nil)
+		resp, nbPage, err = glproj.Glapi.CallGitlabApi("/api/v4/projects?&page="+strconv.Itoa(currentPage)+"&"+parameters, http.MethodGet, nil)
 		if err != nil {
 			log.Fatalln(err)
 			return err

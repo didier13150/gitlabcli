@@ -89,6 +89,11 @@ func NewGLCli() GLCli {
 	return glcli
 }
 
+func (glcli *GLCli) SetProjectParameters(allProjects bool, simpleRequest bool) {
+	glcli.projects.SimpleRequest = simpleRequest
+	glcli.projects.MembershipOnly = !allProjects
+}
+
 func (glcli *GLCli) Run() {
 
 	glcli.token = readFromFile(glcli.Config.TokenFile, "token", glcli.Config.VerboseMode)

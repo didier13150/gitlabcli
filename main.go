@@ -27,6 +27,8 @@ func main() {
 	var export = flag.Bool("export", glcli.Config.ExportMode, "Export current variables in var file.")
 	var exportProjectsOnly = flag.Bool("export-projects", glcli.Config.ExportProjectMode, "Export current projects in project file.")
 	var deleteIsActive = flag.Bool("delete", glcli.Config.DeleteMode, "Delete Gitlab var if not present in var file.")
+	var allProjects = flag.Bool("all-projects", false, "Export all projects, not only projects where I'm a membership.")
+	var simpleRequest = flag.Bool("full-projects-data", false, "Requesting full data about projects.")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage: " + os.Args[0] + " [options]\n")
@@ -82,5 +84,6 @@ func main() {
 	if remoteName != nil {
 		glcli.RemoteName = *remoteName
 	}
+	glcli.SetProjectParameters(*allProjects, *simpleRequest)
 	glcli.Run()
 }
