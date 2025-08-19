@@ -22,3 +22,12 @@ lint:
 
 test: build
 	@bash -c "test/glsimulator/$(SIMU_NAME) 1>glsimulator.log 2>&1 &" && cd gitlabcli && go test ; killall $(SIMU_NAME) 1>/dev/null 2>&1 ||:
+
+install:
+	@if [ $$(id -u) -eq 0 ] ; then \
+		mkdir -p /usr/local/bin ; \
+		cp $(APP_NAME) /usr/local/bin/ ; \
+	else \
+		mkdir -p $${HOME}/.local/bin ; \
+		cp $(APP_NAME) $${HOME}/.local/bin/ ; \
+	fi
