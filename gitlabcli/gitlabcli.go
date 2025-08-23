@@ -104,6 +104,11 @@ func (glcli *GLCli) Run() {
 	if glcli.Config.VerboseMode {
 		log.Printf("Get token from: %s", glcli.Config.TokenFile)
 	}
+	if glcli.Config.DryrunMode {
+		glcli.projects.DryrunMode = glcli.Config.DryrunMode
+		glcli.vars.DryrunMode = glcli.Config.DryrunMode
+		glcli.envs.DryrunMode = glcli.Config.DryrunMode
+	}
 
 	if glcli.Config.ExportProjectMode {
 		log.Printf("Export current Gitlab projects to %s file", glcli.Config.ProjectsFile)
@@ -230,13 +235,18 @@ func (glcli *GLCli) Run() {
 	if glcli.Config.VerboseMode {
 		log.Print("Compare the environments between those present on GitLab and those in variable file")
 	}
+
+	glcli.vars.ImportVars(glcli.Config.VarsFile)
+
 	missingEnvs := glcli.envs.GetMissingEnvs(glcli.vars.GetEnvsFromVars())
 	for _, env := range missingEnvs {
-		var newenv GitlabEnvData
-		newenv.Name = env
-		err = glcli.envs.InsertEnv(newenv)
-		if err != nil {
-			log.Fatalf("Cannot insert env %s", newenv.Name)
+		if !glcli.Config.DryrunMode {
+			var newenv GitlabEnvData
+			newenv.Name = env
+			err = glcli.envs.InsertEnv(newenv)
+			if err != nil {
+				log.Fatalf("Cannot insert env %s", newenv.Name)
+			}
 		}
 	}
 	if len(missingEnvs) == 0 && glcli.Config.VerboseMode {
@@ -245,7 +255,6 @@ func (glcli *GLCli) Run() {
 	if glcli.Config.VerboseMode {
 		log.Print("Compare the variables between those present on GitLab and those in variable file")
 	}
-	glcli.vars.ImportVars(glcli.Config.VarsFile)
 
 	toAdd, toDelete, toUpdate := glcli.vars.CompareVar()
 	if glcli.Config.DryrunMode {

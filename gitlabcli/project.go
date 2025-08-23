@@ -13,6 +13,7 @@ type GitlabProject struct {
 	Verbose        bool
 	MembershipOnly bool
 	SimpleRequest  bool
+	DryrunMode     bool
 	Glapi          GLApi
 	Data           []GitlabProjectData
 }
@@ -24,6 +25,7 @@ func NewGitlabProject(UrlBase string, Token string, Verbose bool) GitlabProject 
 	glproj.Verbose = Verbose
 	glproj.MembershipOnly = true
 	glproj.SimpleRequest = false
+	glproj.DryrunMode = false
 	glproj.Data = []GitlabProjectData{}
 	glproj.Glapi = NewGLApi(UrlBase, Token, Verbose)
 	return glproj

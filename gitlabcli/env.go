@@ -11,6 +11,7 @@ type GitlabEnv struct {
 	UrlBase    string
 	Token      string
 	Verbose    bool
+	DryrunMode bool
 	ProjectId  string
 	Glapi      GLApi
 	GitlabData []GitlabEnvData
@@ -22,6 +23,7 @@ func NewGitlabEnv(UrlBase string, Token string, Verbose bool) GitlabEnv {
 	glenv.UrlBase = UrlBase
 	glenv.Token = Token
 	glenv.Verbose = Verbose
+	glenv.DryrunMode = false
 	glenv.Glapi = NewGLApi(UrlBase, Token, Verbose)
 	glenv.GitlabData = []GitlabEnvData{}
 	glenv.FileData = []GitlabEnvData{}
@@ -72,6 +74,9 @@ func (glenv *GitlabEnv) ImportEnvs(filename string) {
 }
 
 func (glenv *GitlabEnv) InsertEnv(env GitlabEnvData) error {
+	if glenv.DryrunMode {
+		log.Print("Cannot inserting env in dryrun mode")
+	}
 	urlapi := "/api/v4/projects/" + glenv.ProjectId + "/environments"
 	log.Printf("Use URL %s to insert env", urlapi)
 	json, err := json.Marshal(env)
@@ -95,6 +100,9 @@ func (glenv *GitlabEnv) InsertEnv(env GitlabEnvData) error {
 }
 
 func (glenv *GitlabEnv) UpdateEnv(env GitlabEnvData) error {
+	if glenv.DryrunMode {
+		log.Print("Cannot updating env in dryrun mode")
+	}
 	urlapi := "/api/v4/projects/" + glenv.ProjectId + "/environments/" + strconv.Itoa(env.Id)
 	log.Printf("Use URL %s to update env", urlapi)
 	json, err := json.Marshal(env)
@@ -118,6 +126,9 @@ func (glenv *GitlabEnv) UpdateEnv(env GitlabEnvData) error {
 }
 
 func (glenv *GitlabEnv) DeleteEnv(env GitlabEnvData) error {
+	if glenv.DryrunMode {
+		log.Print("Cannot deleting env in dryrun mode")
+	}
 	urlapi := "/api/v4/projects/" + glenv.ProjectId + "/environments/" + strconv.Itoa(env.Id)
 	log.Printf("Use URL %s to delete env", urlapi)
 	log.Printf("Stop env %s (%d)", env.Name, env.Id)
@@ -195,16 +206,16 @@ func (glenv *GitlabEnv) CompareEnv() ([]GitlabEnvData, []GitlabEnvData, []Gitlab
 			if itemExists {
 				delete(missingKey, item2.Name)
 				envsToUpdate = append(envsToUpdate, item2)
-				log.Println("Env", item2, "should be updated")
+				log.Printf("Env %s should be updated", item2.Name)
 			} else {
 				envsToAdd = append(envsToAdd, item2)
-				log.Println("Env", item2, "should be added")
+				log.Printf("Env %s should be added", item2.Name)
 			}
 		}
 	}
 	for _, item := range missingKey {
 		envsToDelete = append(envsToDelete, item)
-		log.Println("Env", item, "should be deleted")
+		log.Printf("Env %s should be deleted", item.Name)
 	}
 	return envsToAdd, envsToDelete, envsToUpdate
 }

@@ -11,6 +11,7 @@ type GitlabVar struct {
 	UrlBase    string
 	Token      string
 	Verbose    bool
+	DryrunMode bool
 	ProjectId  string
 	Glapi      GLApi
 	GitlabData []GitlabVarData
@@ -22,6 +23,7 @@ func NewGitlabVar(UrlBase string, Token string, Verbose bool) GitlabVar {
 	glvar.UrlBase = UrlBase
 	glvar.Token = Token
 	glvar.Verbose = Verbose
+	glvar.DryrunMode = false
 	glvar.Glapi = NewGLApi(UrlBase, Token, Verbose)
 	glvar.GitlabData = []GitlabVarData{}
 	glvar.FileData = []GitlabVarData{}
@@ -72,6 +74,9 @@ func (glvar *GitlabVar) ImportVars(filename string) {
 }
 
 func (glvar *GitlabVar) InsertVar(variable GitlabVarData) error {
+	if glvar.DryrunMode {
+		log.Print("Cannot inserting var in dryrun mode")
+	}
 	urlapi := "/api/v4/projects/" + glvar.ProjectId + "/variables"
 	log.Printf("Use URL %s to insert var", urlapi)
 	json, err := json.Marshal(variable)
@@ -95,6 +100,9 @@ func (glvar *GitlabVar) InsertVar(variable GitlabVarData) error {
 }
 
 func (glvar *GitlabVar) UpdateVar(variable GitlabVarData) error {
+	if glvar.DryrunMode {
+		log.Print("Cannot updating var in dryrun mode")
+	}
 	urlapi := "/api/v4/projects/" + glvar.ProjectId + "/variables/" + variable.Key + "?filter[environment_scope]=" + variable.Env
 	log.Printf("Use URL %s to update var", urlapi)
 	json, err := json.Marshal(variable)
@@ -118,6 +126,9 @@ func (glvar *GitlabVar) UpdateVar(variable GitlabVarData) error {
 }
 
 func (glvar *GitlabVar) DeleteVar(variable GitlabVarData) error {
+	if glvar.DryrunMode {
+		log.Print("Cannot deleting var in dryrun mode")
+	}
 	urlapi := "/api/v4/projects/" + glvar.ProjectId + "/variables/" + variable.Key + "?filter[environment_scope]=" + variable.Env
 	log.Printf("Use URL %s to delete var", urlapi)
 	log.Printf("Delete var %s in %s env", variable.Key, variable.Env)
@@ -135,7 +146,7 @@ func (glvar *GitlabVar) DeleteVar(variable GitlabVarData) error {
 func (glvar *GitlabVar) GetEnvsFromVars() []string {
 	var envs []string
 	var found bool
-	for _, item := range glvar.GitlabData {
+	for _, item := range glvar.FileData {
 		found = false
 		for _, env := range envs {
 			if env == item.Env {
@@ -182,16 +193,16 @@ func (glvar *GitlabVar) CompareVar() ([]GitlabVarData, []GitlabVarData, []Gitlab
 			if itemExists {
 				delete(missingKey, item2.Env+"/"+item2.Key)
 				varsToUpdate = append(varsToUpdate, item2)
-				log.Println("Var", item2, "should be updated")
+				log.Printf("Var %s[%s] should be updated", item2.Key, item2.Env)
 			} else {
 				varsToAdd = append(varsToAdd, item2)
-				log.Println("Var", item2, "should be added")
+				log.Printf("Var %s[%s] should be added", item2.Key, item2.Env)
 			}
 		}
 	}
 	for _, item := range missingKey {
 		varsToDelete = append(varsToDelete, item)
-		log.Println("Var", item, "should be deleted")
+		log.Printf("Var %s[%s] should be deleted", item.Key, item.Env)
 	}
 	return varsToAdd, varsToDelete, varsToUpdate
 }
