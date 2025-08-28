@@ -1,8 +1,10 @@
-package gitlabcli
+package main
 
 import (
 	"os"
 	"testing"
+
+	"github.com/didier13150/gitlablib"
 )
 
 func TestGLCliConfig(t *testing.T) {
@@ -96,7 +98,7 @@ func TestGLCliExportProjects(t *testing.T) {
 	glcli.Run()
 
 	// Check that export file have 48 projects(6 groups * 8 names in glsimulator)
-	projects := NewGitlabProject(glcli.Config.GitlabUrl, "token", false)
+	projects := gitlablib.NewGitlabProject(glcli.Config.GitlabUrl, "token", false)
 	projects.ImportProjects(glcli.Config.ProjectsFile)
 	if len(projects.Data) != 48 {
 		t.Errorf(`TestGLCliExportProjects(count projects on export file) = %d, must be %d`, len(projects.Data), 48)
@@ -129,13 +131,13 @@ func TestGLCliExport(t *testing.T) {
 	glcli.Run()
 
 	// Check that env export file have 2 envs
-	envs := NewGitlabEnv(glcli.Config.GitlabUrl, "token", false)
+	envs := gitlablib.NewGitlabEnv(glcli.Config.GitlabUrl, "token", false)
 	envs.ImportEnvs(glcli.Config.EnvsFile)
 	if len(envs.FileData) != 2 {
 		t.Errorf(`TestGLCliExportProjects(count vars on export file) = %d, must be %d`, len(envs.FileData), 2)
 	}
 	// Check that env export file have 3 vars
-	vars := NewGitlabVar(glcli.Config.GitlabUrl, "token", false)
+	vars := gitlablib.NewGitlabVar(glcli.Config.GitlabUrl, "token", false)
 	vars.ImportVars(glcli.Config.EnvsFile)
 	if len(vars.FileData) != 2 {
 		t.Errorf(`TestGLCliExportProjects(count vars on export file) = %d, must be %d`, len(vars.FileData), 3)

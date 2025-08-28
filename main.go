@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/didier13150/gitlabcli"
 )
 
 func main() {
 
-	glcli := gitlabcli.NewGLCli()
+	glcli := NewGLCli()
 
 	var projectId = flag.String("id", "", "Gitlab project identifiant.")
 	var projectIdFile = flag.String("idfile", glcli.Config.IdFile, "Gitlab project identifiant file.")
