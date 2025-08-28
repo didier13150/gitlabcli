@@ -9,7 +9,6 @@ ENV PATH=/go/bin:$PATH
 RUN mkdir build
 
 COPY *.go  go.* build/
-COPY gitlabcli/ build/gitlabcli
 RUN cd build && \
     go install && \
     CGO_ENABLED=0 GOOS=linux go build \

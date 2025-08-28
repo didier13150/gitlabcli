@@ -1,4 +1,4 @@
-package gitlabcli
+package main
 
 import (
 	"bufio"
@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"strconv"
+
+	"github.com/didier13150/gitlablib"
 )
 
 type GLCliConfig struct {
@@ -30,9 +32,9 @@ type GLCli struct {
 	ProjectId  string
 	RemoteName string
 	token      string
-	vars       GitlabVar
-	envs       GitlabEnv
-	projects   GitlabProject
+	vars       gitlablib.GitlabVar
+	envs       gitlablib.GitlabEnv
+	projects   gitlablib.GitlabProject
 }
 
 func NewGLCli() GLCli {
@@ -96,10 +98,10 @@ func (glcli *GLCli) SetProjectParameters(allProjects bool, simpleRequest bool) {
 
 func (glcli *GLCli) Run() {
 
-	glcli.token = readFromFile(glcli.Config.TokenFile, "token", glcli.Config.VerboseMode)
-	glcli.vars = NewGitlabVar(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
-	glcli.envs = NewGitlabEnv(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
-	glcli.projects = NewGitlabProject(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
+	glcli.token = gitlablib.ReadFromFile(glcli.Config.TokenFile, "token", glcli.Config.VerboseMode)
+	glcli.vars = gitlablib.NewGitlabVar(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
+	glcli.envs = gitlablib.NewGitlabEnv(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
+	glcli.projects = gitlablib.NewGitlabProject(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
 
 	if glcli.Config.VerboseMode {
 		log.Printf("Get token from: %s", glcli.Config.TokenFile)
@@ -112,7 +114,10 @@ func (glcli *GLCli) Run() {
 
 	if glcli.Config.ExportProjectMode {
 		log.Printf("Export current Gitlab projects to %s file", glcli.Config.ProjectsFile)
-		glcli.projects.GetProjectsFromGitlab()
+		err := glcli.projects.GetProjectsFromGitlab()
+		if err != nil {
+			log.Fatal("Cannot fetch projects from gitlab")
+		}
 		glcli.projects.ExportProjects(glcli.Config.ProjectsFile)
 		log.Print("Exit now because project export is done")
 		return
@@ -125,7 +130,7 @@ func (glcli *GLCli) Run() {
 		if err != nil {
 			log.Fatalln("Cannot close project file")
 		}
-		repoUrl := getGitUrl(glcli.RemoteName, glcli.Config.VerboseMode)
+		repoUrl := gitlablib.GetGitUrl(glcli.RemoteName, glcli.Config.VerboseMode)
 		if glcli.Config.VerboseMode {
 			log.Printf("Get git repository url for remote %s: %s", glcli.RemoteName, repoUrl)
 		}
@@ -144,7 +149,7 @@ func (glcli *GLCli) Run() {
 		}
 	}
 	if glcli.ProjectId == "" {
-		glcli.ProjectId = readFromFile(glcli.Config.IdFile, "project Id", glcli.Config.VerboseMode)
+		glcli.ProjectId = gitlablib.ReadFromFile(glcli.Config.IdFile, "project Id", glcli.Config.VerboseMode)
 		if glcli.Config.VerboseMode {
 			log.Printf("Get projectId: %s from %s file", glcli.ProjectId, glcli.Config.IdFile)
 		}
@@ -156,9 +161,15 @@ func (glcli *GLCli) Run() {
 	glcli.vars.ProjectId = glcli.ProjectId
 
 	log.Printf("Fetching envs from gitlab with URL %s", glcli.Config.GitlabUrl)
-	glcli.envs.GetEnvsFromGitlab()
+	err = glcli.envs.GetEnvsFromGitlab()
+	if err != nil {
+		log.Fatal("Cannot fetch envs from gitlab")
+	}
 	log.Printf("Fetching vars from gitlab with URL %s", glcli.Config.GitlabUrl)
-	glcli.vars.GetVarsFromGitlab()
+	err = glcli.vars.GetVarsFromGitlab()
+	if err != nil {
+		log.Fatal("Cannot fetch vars from gitlab")
+	}
 	if glcli.Config.DebugMode {
 		glcli.debug()
 	}
@@ -241,7 +252,7 @@ func (glcli *GLCli) Run() {
 	missingEnvs := glcli.envs.GetMissingEnvs(glcli.vars.GetEnvsFromVars())
 	for _, env := range missingEnvs {
 		if !glcli.Config.DryrunMode {
-			var newenv GitlabEnvData
+			var newenv gitlablib.GitlabEnvData
 			newenv.Name = env
 			err = glcli.envs.InsertEnv(newenv)
 			if err != nil {
