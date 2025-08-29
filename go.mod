@@ -1,4 +1,4 @@
-module github.com/didier13150/glcli
+module github.com/didier13150/gitlabcli
 
 go 1.21.0
 

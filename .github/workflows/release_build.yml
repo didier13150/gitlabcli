@@ -19,8 +19,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.21
-        id: go
+          go-version: '1.21'
+
+      - name: Verify go.mod is tidy
+        run: |
+          go mod tidy
+          git diff --exit-code
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -28,6 +32,6 @@ jobs:
           # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GO_RELEASER_GITHUB_TOKEN }}

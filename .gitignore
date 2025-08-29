@@ -7,3 +7,5 @@
 glcli
 debug.txt
 *.log
+vendor
+make-tag.sh
