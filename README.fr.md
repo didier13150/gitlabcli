@@ -10,6 +10,12 @@ L'application possède également un mode lecture seule, dans lequel seul les ap
 
 L'application peut également obtenir l'identifiant du projet à partir d'un export des projets (fichier `.gitlab.projects.json`)
 
+## Installation
+
+```
+go install github.com/didier13150/gitlabcli@latest
+```
+
 ## Usage de l'application
 
 ```

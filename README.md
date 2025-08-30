@@ -10,6 +10,12 @@ The application also has a read-only mode, in which only read calls are made: `-
 
 The application can also get the project ID from a project export data (`.gitlab.project.json` file)
 
+## Installation
+
+```
+go install github.com/didier13150/gitlabcli@latest
+```
+
 ## Application Usage
 
 ```
