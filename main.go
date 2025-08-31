@@ -12,9 +12,12 @@ func main() {
 	glcli := NewGLCli()
 
 	var projectId = flag.String("id", "", "Gitlab project identifiant.")
+	var groupId = flag.String("gid", "", "Gitlab group identifiant.")
 	var projectIdFile = flag.String("idfile", glcli.Config.IdFile, "Gitlab project identifiant file.")
+	var groupIdFile = flag.String("gidfile", glcli.Config.GroupIdFile, "Gitlab group identifiant file.")
 	var varsFile = flag.String("varfile", glcli.Config.VarsFile, "File which contains vars.")
 	var envsFile = flag.String("envfile", glcli.Config.EnvsFile, "File which contains envs.")
+	var groupvarsFile = flag.String("groupvarfile", glcli.Config.GroupVarsFile, "File which contains group vars.")
 	var projectsFile = flag.String("projectfile", glcli.Config.ProjectsFile, "File which contains projects.")
 	var gitlabUrl = flag.String("url", glcli.Config.GitlabUrl, "Gitlab URL.")
 	var gitlabTokenFile = flag.String("tokenfile", glcli.Config.TokenFile, "File which contains token to access Gitlab API.")
@@ -61,6 +64,9 @@ func main() {
 	if projectIdFile != nil {
 		glcli.Config.IdFile = *projectIdFile
 	}
+	if groupIdFile != nil {
+		glcli.Config.GroupIdFile = *groupIdFile
+	}
 	if varsFile != nil {
 		glcli.Config.VarsFile = *varsFile
 	}
@@ -70,6 +76,9 @@ func main() {
 	if projectsFile != nil {
 		glcli.Config.ProjectsFile = *projectsFile
 	}
+	if groupvarsFile != nil {
+		glcli.Config.GroupVarsFile = *groupvarsFile
+	}
 	if gitlabUrl != nil {
 		glcli.Config.GitlabUrl = *gitlabUrl
 	}
@@ -78,6 +87,9 @@ func main() {
 	}
 	if projectId != nil {
 		glcli.ProjectId = *projectId
+	}
+	if groupId != nil {
+		glcli.GroupId = *groupId
 	}
 	if remoteName != nil {
 		glcli.RemoteName = *remoteName

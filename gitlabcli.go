@@ -13,7 +13,9 @@ import (
 type GLCliConfig struct {
 	GitlabUrl         string
 	IdFile            string
+	GroupIdFile       string
 	VarsFile          string
+	GroupVarsFile     string
 	EnvsFile          string
 	ProjectsFile      string
 	DebugFile         string
@@ -30,6 +32,7 @@ type GLCliConfig struct {
 type GLCli struct {
 	Config     GLCliConfig
 	ProjectId  string
+	GroupId    string
 	RemoteName string
 	token      string
 	vars       gitlablib.GitlabVar
@@ -50,10 +53,20 @@ func NewGLCli() GLCli {
 	} else {
 		glcli.Config.IdFile = ".gitlab.id"
 	}
+	if len(os.Getenv("GLCLI_GROUP_ID_FILE")) > 0 {
+		glcli.Config.GroupIdFile = os.Getenv("GLCLI_GROUP_ID_FILE")
+	} else {
+		glcli.Config.GroupIdFile = ".gitlab.gid"
+	}
 	if len(os.Getenv("GLCLI_VAR_FILE")) > 0 {
 		glcli.Config.VarsFile = os.Getenv("GLCLI_VAR_FILE")
 	} else {
 		glcli.Config.VarsFile = ".gitlab-vars.json"
+	}
+	if len(os.Getenv("GLCLI_GROUP_VAR_FILE")) > 0 {
+		glcli.Config.GroupVarsFile = os.Getenv("GLCLI_GROUP_VAR_FILE")
+	} else {
+		glcli.Config.GroupVarsFile = ".gitlab-groupvars.json"
 	}
 	if len(os.Getenv("GLCLI_ENV_FILE")) > 0 {
 		glcli.Config.EnvsFile = os.Getenv("GLCLI_ENV_FILE")
@@ -141,6 +154,13 @@ func (glcli *GLCli) Run() {
 				if glcli.Config.VerboseMode {
 					log.Printf("Get projectId: %s from git repository URL %s", glcli.ProjectId, repoUrl)
 				}
+				gid := glcli.projects.GetGroupIdByProjectId(id)
+				if gid > 0 {
+					glcli.GroupId = strconv.Itoa(gid)
+					if glcli.Config.VerboseMode {
+						log.Printf("Get groupId: %s from id %s", glcli.GroupId, glcli.ProjectId)
+					}
+				}
 			}
 		}
 	} else {
@@ -154,11 +174,18 @@ func (glcli *GLCli) Run() {
 			log.Printf("Get projectId: %s from %s file", glcli.ProjectId, glcli.Config.IdFile)
 		}
 	}
+	if glcli.GroupId == "" {
+		glcli.GroupId = gitlablib.ReadFromFile(glcli.Config.GroupIdFile, "group Id", glcli.Config.VerboseMode)
+		if glcli.Config.VerboseMode {
+			log.Printf("Get GroupId: %s from %s file", glcli.GroupId, glcli.Config.GroupIdFile)
+		}
+	}
 	if glcli.Config.VerboseMode {
-		log.Printf("Using projectId: %s", glcli.ProjectId)
+		log.Printf("Using projectId: %s, groupId: %s", glcli.ProjectId, glcli.GroupId)
 	}
 	glcli.envs.ProjectId = glcli.ProjectId
 	glcli.vars.ProjectId = glcli.ProjectId
+	glcli.vars.GroupId = glcli.GroupId
 
 	log.Printf("Fetching envs from gitlab with URL %s", glcli.Config.GitlabUrl)
 	err = glcli.envs.GetEnvsFromGitlab()
@@ -170,6 +197,13 @@ func (glcli *GLCli) Run() {
 	if err != nil {
 		log.Fatal("Cannot fetch vars from gitlab")
 	}
+	if glcli.GroupId != "" {
+		log.Printf("Fetching group vars from gitlab with URL %s", glcli.Config.GitlabUrl)
+		err = glcli.vars.GetGroupVarsFromGitlab()
+		if err != nil {
+			log.Fatal("Cannot fetch vars from gitlab")
+		}
+	}
 	if glcli.Config.DebugMode {
 		glcli.debug()
 	}
@@ -177,6 +211,8 @@ func (glcli *GLCli) Run() {
 	if glcli.Config.ExportMode {
 		log.Printf("Export current Gitlab vars to %s file", glcli.Config.VarsFile)
 		glcli.vars.ExportVars(glcli.Config.VarsFile)
+		log.Printf("Export current Gitlab group vars to %s file", glcli.Config.GroupVarsFile)
+		glcli.vars.ExportGroupVars(glcli.Config.GroupVarsFile)
 		log.Printf("Export current Gitlab envs to %s file", glcli.Config.EnvsFile)
 		glcli.envs.ExportEnvs(glcli.Config.EnvsFile)
 		log.Print("Exit now because export is done")
@@ -244,10 +280,11 @@ func (glcli *GLCli) Run() {
 		log.Fatalln("Cannot close var file (test)")
 	}
 	if glcli.Config.VerboseMode {
-		log.Print("Compare the environments between those present on GitLab and those in variable file")
+		log.Print("Compare the environments between those present on GitLab and those in variable files")
 	}
 
 	glcli.vars.ImportVars(glcli.Config.VarsFile)
+	glcli.vars.ImportGroupVars(glcli.Config.GroupVarsFile)
 
 	missingEnvs := glcli.envs.GetMissingEnvs(glcli.vars.GetEnvsFromVars())
 	for _, env := range missingEnvs {
@@ -263,11 +300,15 @@ func (glcli *GLCli) Run() {
 	if len(missingEnvs) == 0 && glcli.Config.VerboseMode {
 		log.Print("All required envs for vars are present")
 	}
+
 	if glcli.Config.VerboseMode {
 		log.Print("Compare the variables between those present on GitLab and those in variable file")
 	}
-
 	toAdd, toDelete, toUpdate := glcli.vars.CompareVar()
+	if glcli.Config.VerboseMode {
+		log.Print("Compare the group variables between those present on GitLab and those in variable file")
+	}
+	toGroupAdd, toGroupDelete, toGroupUpdate := glcli.vars.CompareGroupVar()
 	if glcli.Config.DryrunMode {
 		log.Print("Exit now because dryrun mode is active")
 		return
@@ -305,6 +346,39 @@ func (glcli *GLCli) Run() {
 			log.Printf("%d var(s) may be deleted, but delete flag in command line is not set", len(toDelete))
 		}
 	}
+	for _, item := range toGroupAdd {
+		err = glcli.vars.InsertGroupVar(item)
+		if err != nil {
+			log.Fatalf("Cannot insert group var %s", item.Key)
+		}
+	}
+	if len(toGroupAdd) == 0 {
+		log.Print("No group var to insert")
+	}
+	for _, item := range toGroupUpdate {
+		err = glcli.vars.UpdateGroupVar(item)
+		if err != nil {
+			log.Fatalf("Cannot update group var %s", item.Key)
+		}
+	}
+	if len(toGroupUpdate) == 0 {
+		log.Print("No group var to update")
+	}
+	if len(toGroupDelete) == 0 {
+		log.Print("No group var to delete")
+	}
+	if glcli.Config.DeleteMode {
+		for _, item := range toGroupDelete {
+			err = glcli.vars.DeleteGroupVar(item)
+			if err != nil {
+				log.Fatalf("Cannot delete group var %s", item.Key)
+			}
+		}
+	} else {
+		if len(toGroupDelete) > 0 {
+			log.Printf("%d group var(s) may be deleted, but delete flag in command line is not set", len(toGroupDelete))
+		}
+	}
 	log.Print("Exit")
 }
 
@@ -328,6 +402,14 @@ func (glcli GLCli) debug() {
 		log.Fatalln("Cannot write into debug file")
 	}
 	_, err = fmt.Fprintf(w, "%v\n", glcli.vars.GitlabData)
+	if err != nil {
+		log.Fatalln("Cannot write into debug file")
+	}
+	_, err = fmt.Fprint(w, "============== Group Vars ==============\n")
+	if err != nil {
+		log.Fatalln("Cannot write into debug file")
+	}
+	_, err = fmt.Fprintf(w, "%v\n", glcli.vars.GitlabGroupData)
 	if err != nil {
 		log.Fatalln("Cannot write into debug file")
 	}

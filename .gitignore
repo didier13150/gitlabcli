@@ -1,7 +1,5 @@
-.gitlab.id
-.gitlab-vars*
-.gitlab-envs*
-.gitlab-projects*
+.gitlab.*id
+.gitlab*.json
 .gitlab*.token
 *.bak
 glcli
