@@ -10,7 +10,9 @@ import (
 func TestGLCliConfig(t *testing.T) {
 	url := "https://gitlab.com"
 	idfile := "project.id"
+	gidfile := "project.gid"
 	varsfile := "project.vars"
+	groupvarsfile := "project.groupvars"
 	envsfile := "project.envs"
 	projectsfile := "projects.list"
 	debugfile := "debug.log"
@@ -26,6 +28,8 @@ func TestGLCliConfig(t *testing.T) {
 	config := GLCliConfig{}
 	config.GitlabUrl = url
 	config.IdFile = idfile
+	config.GroupIdFile = gidfile
+	config.GroupVarsFile = groupvarsfile
 	config.VarsFile = varsfile
 	config.EnvsFile = envsfile
 	config.ProjectsFile = projectsfile
@@ -45,8 +49,14 @@ func TestGLCliConfig(t *testing.T) {
 	if config.IdFile != idfile {
 		t.Errorf(`TestGLCliConfig(IdFile) = %s, want %s`, config.IdFile, idfile)
 	}
+	if config.GroupIdFile != gidfile {
+		t.Errorf(`TestGLCliConfig(IdFile) = %s, want %s`, config.GroupIdFile, gidfile)
+	}
 	if config.VarsFile != varsfile {
 		t.Errorf(`TestGLCliConfig(VarsFile) = %s, want %s`, config.VarsFile, varsfile)
+	}
+	if config.GroupVarsFile != groupvarsfile {
+		t.Errorf(`TestGLCliConfig(VarsFile) = %s, want %s`, config.GroupVarsFile, groupvarsfile)
 	}
 	if config.EnvsFile != envsfile {
 		t.Errorf(`TestGLCliConfig(EnvsFile) = %s, want %s`, config.EnvsFile, envsfile)
@@ -121,8 +131,10 @@ func TestGLCliExport(t *testing.T) {
 	glcli.Config.TokenFile = "/tmp/glcli.token"
 	glcli.Config.VarsFile = "/tmp/glcli-vars.json"
 	glcli.Config.EnvsFile = "/tmp/glcli-envs.json"
+	glcli.Config.GroupVarsFile = "/tmp/glcli-groupvars.json"
 	glcli.Config.ExportMode = true
 	glcli.ProjectId = "3"
+	glcli.GroupId = "2"
 
 	err := os.WriteFile(glcli.Config.TokenFile, []byte("token"), 0644)
 	if err != nil {
@@ -138,9 +150,15 @@ func TestGLCliExport(t *testing.T) {
 	}
 	// Check that env export file have 3 vars
 	vars := gitlablib.NewGitlabVar(glcli.Config.GitlabUrl, "token", false)
-	vars.ImportVars(glcli.Config.EnvsFile)
-	if len(vars.FileData) != 2 {
+	vars.ImportVars(glcli.Config.VarsFile)
+	if len(vars.FileData) != 3 {
 		t.Errorf(`TestGLCliExportProjects(count vars on export file) = %d, must be %d`, len(vars.FileData), 3)
+	}
+	// Check that env export file have 3 vars
+	groupvars := gitlablib.NewGitlabVar(glcli.Config.GitlabUrl, "token", false)
+	vars.ImportGroupVars(glcli.Config.GroupVarsFile)
+	if len(vars.FileGroupData) != 3 {
+		t.Errorf(`TestGLCliExportProjects(count groupvars on export file) = %d, must be %d`, len(groupvars.FileGroupData), 3)
 	}
 
 	err = os.Remove(glcli.Config.TokenFile)
@@ -166,8 +184,10 @@ func TestGLCliRun(t *testing.T) {
 	glcli.Config.TokenFile = "/tmp/glcli.token"
 	glcli.Config.VarsFile = "/tmp/glcli-vars.json"
 	glcli.Config.EnvsFile = "/tmp/glcli-envs.json"
+	glcli.Config.GroupVarsFile = "/tmp/glcli-groupvars.json"
 	glcli.Config.ExportMode = true
 	glcli.ProjectId = "3"
+	glcli.GroupId = "2"
 
 	err := os.WriteFile(glcli.Config.TokenFile, []byte("token"), 0644)
 	if err != nil {
@@ -176,6 +196,7 @@ func TestGLCliRun(t *testing.T) {
 	glcli.Run()
 	glcli2.Config = glcli.Config
 	glcli2.ProjectId = "3"
+	glcli2.GroupId = "2"
 	glcli2.Config.ExportMode = false
 	glcli2.Run()
 
