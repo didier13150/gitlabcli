@@ -2,13 +2,13 @@
 
 Le programme `glcli` permet une gestion des variables et des environnements Gitlab, c'est à dire qu'il synchronise les fichiers json et les données du gitlab. Il peut le faire dans l'autre sens avec l'option `-export`.
 
-Il utilise le format de fichier plat pour l'id du projet (fichier `.gitlab.id`) et le format JSON pour les environnements (fichier `.gitlab.env.json`), les variables (fichier `.gitlab.var.json`) et les projets (fichier `.gitlab.varproject.json`).
+Il utilise le format de fichier plat pour l'id du projet et son groupe id (fichier `.gitlab.id` et `.gitlab.gid`) et le format JSON pour les environnements (fichier `.gitlab.env.json`), les variables (fichier `.gitlab-var.json` et `.gitlab-groupvar.json`) et les projets (fichier `.gitlab-project.json`).
 
 Il a besoin de l'url du gitlab, ainsi que d'un token valide pour l'identification. Il n'est pas possible de passer directement le token à l'application, on ne peut que spécifier un fichier contenant ce token pour des raisons de sécurité.
 
 L'application possède également un mode lecture seule, dans lequel seul les appels de lecture sont effectués: `-dryrun`
 
-L'application peut également obtenir l'identifiant du projet à partir d'un export des projets (fichier `.gitlab.projects.json`)
+L'application peut également obtenir l'identifiant du projet à partir d'un export des projets (fichier `.gitlab-projects.json`)
 
 ## Installation
 
@@ -21,6 +21,8 @@ go install github.com/didier13150/gitlabcli@latest
 ```
 ❯ ./glcli -help
 Usage: ./glcli [options]
+  -all-projects
+        Export all projects, not only projects where I'm a membership.
   -debug
         Enable debug mode
   -delete
@@ -33,6 +35,14 @@ Usage: ./glcli [options]
         Export current variables in var file.
   -export-projects
         Export current projects in project file.
+  -full-projects-data
+        Requesting full data about projects.
+  -gid string
+        Gitlab group identifiant.
+  -gidfile string
+        Gitlab group identifiant file. (default ".gitlab.gid")
+  -groupvarfile string
+        File which contains group vars. (default ".gitlab-groupvars.json")
   -id string
         Gitlab project identifiant.
   -idfile string
@@ -62,6 +72,11 @@ Pour obtenir automatiquement l'identifiant du projet, il faut exporter les donn�
     ```
     51
     ```
+* Fichier concernant l'**identifiant du groupe** (fichier `.gitlab.gid`). Ce fichier contient un nombre sur une ligne unique, sans espace, correspondant à l'id du groupe auquel appartient le projet.
+
+    ```
+    69
+    ```
 * Fichier concernant **les environnements**
 
     ```
@@ -84,7 +99,7 @@ Pour obtenir automatiquement l'identifiant du projet, il faut exporter les donn�
     | external_url | URL de vérification            | chaîne de caractères qui peut être nulle | _null_            | facultatif pour la création      |
     | description  | Description de l'environnement | chaîne de caractères qui peut être nulle | _null_            | facultatif pour la création      |
 
-* Fichier concernant **les variables**
+* Fichier concernant **les variables** projet et groupe
 
     ```
     [
@@ -151,15 +166,17 @@ Pour obtenir automatiquement l'identifiant du projet, il faut exporter les donn�
 
 L'application peut utiliser des variables d'environnement afin de simplifier les options de la ligne de commande.
 
-| Variable           | valeur par défaut           |
-| ------------------ | --------------------------- |
-| GLCLI_GITLAB_URL   | https://gitlab.com          |
-| GLCLI_TOKEN_FILE   | $HOME/.gitlab.token         |
-| GLCLI_PROJECT_FILE | $HOME/.gitlab.projects.json |
-| GLCLI_VAR_FILE     | .gitlab-vars.json           |
-| GLCLI_ENV_FILE     | .gitlab-envs.json           |
-| GLCLI_ID_FILE      | .gitlab.id                  |
-| GLCLI_DEBUG_FILE   | debug.txt                   |
+| Variable             | valeur par défaut           |
+| -------------------- | --------------------------- |
+| GLCLI_GITLAB_URL     | https://gitlab.com          |
+| GLCLI_TOKEN_FILE     | $HOME/.gitlab.token         |
+| GLCLI_PROJECT_FILE   | $HOME/.gitlab.projects.json |
+| GLCLI_VAR_FILE       | .gitlab-vars.json           |
+| GLCLI_GROUP_VAR_FILE | .gitlab-groupvars.json      |
+| GLCLI_ENV_FILE       | .gitlab-envs.json           |
+| GLCLI_ID_FILE        | .gitlab.id                  |
+| GLCLI_GROUP_ID_FILE  | .gitlab.gid                 |
+| GLCLI_DEBUG_FILE     | debug.txt                   |
 
 Avant d'utiliser l'application, on doit soit inscrire l'identifiant du projet dans le fichier `.gitlab.id` ou se servir d'un export des projets.
 
@@ -196,6 +213,7 @@ Pour supprimer les variables surnumémaires il faut ajouter l'option `-delete`
     ```
     echo -n '[]' > .gitlab.env.json
     echo -n '[]' > .gitlab.var.json
+    echo -n '[]' > .gitlab.groupvar.json
     ```
 2. Modification des fichiers afin de spécifier les variables et environnements. Ajout d'un environnement nommé **production** et de trois **variables** dont une présente sur tous les environnement, mais surchargée pour l'environnement de production.
     

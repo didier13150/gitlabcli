@@ -2,7 +2,7 @@
 
 The `glcli` program allows Gitlab variable and environment management, i.e., it synchronizes JSON files and Gitlab data. It can do this the other way around with the `-export` option.
 
-It uses the flat file format for the project ID (`.gitlab.id` file) and the JSON format for environments (`.gitlab.env.json` file) and variables (`.gitlab.var.json` file).
+It uses the flat file format for the project ID and its groupe ID (`.gitlab.id` and `.gitlab.gid` files) and the JSON format for environments (`.gitlab.env.json` file) and variables (`.gitlab.var.json` file).
 
 It requires the Gitlab URL and a valid token for identification. It is not possible to pass the token directly to the application; you can only specify a file containing this token for security reasons.
 
@@ -21,6 +21,8 @@ go install github.com/didier13150/gitlabcli@latest
 ```
 ❯ ./glcli -help
 Usage: ./glcli [options]
+  -all-projects
+        Export all projects, not only projects where I'm a membership.
   -debug
         Enable debug mode
   -delete
@@ -33,6 +35,14 @@ Usage: ./glcli [options]
         Export current variables in var file.
   -export-projects
         Export current projects in project file.
+  -full-projects-data
+        Requesting full data about projects.
+  -gid string
+        Gitlab group identifiant.
+  -gidfile string
+        Gitlab group identifiant file. (default ".gitlab.gid")
+  -groupvarfile string
+        File which contains group vars. (default ".gitlab-groupvars.json")
   -id string
         Gitlab project identifiant.
   -idfile string
@@ -59,6 +69,11 @@ Debug mode exports the environment and variable tables to the `debug.txt` file.
 
     ```
     51
+    ```
+* **Group ID** file (`.gitlab.gid` file). This file contains a single-line, without spaces, corresponding to the project GID.
+
+    ```
+    69
     ```
 * **Environment** file
 
@@ -148,15 +163,17 @@ Debug mode exports the environment and variable tables to the `debug.txt` file.
 
 The application can use environment variables to simplify command-line options.
 
-| Variable            | Default value               |
-| ------------------- | --------------------------- |
-| GLCLI_GITLAB_URL   | https://gitlab.com          |
-| GLCLI_TOKEN_FILE   | $HOME/.gitlab.token         |
-| GLCLI_PROJECT_FILE | $HOME/.gitlab.projects.json |
-| GLCLI_VAR_FILE     | .gitlab-vars.json           |
-| GLCLI_ENV_FILE     | .gitlab-envs.json           |
-| GLCLI_ID_FILE      | .gitlab.id                  |
-| GLCLI_DEBUG_FILE   | debug.txt                   |
+| Variable             | valeur par défaut           |
+| -------------------- | --------------------------- |
+| GLCLI_GITLAB_URL     | https://gitlab.com          |
+| GLCLI_TOKEN_FILE     | $HOME/.gitlab.token         |
+| GLCLI_PROJECT_FILE   | $HOME/.gitlab.projects.json |
+| GLCLI_VAR_FILE       | .gitlab-vars.json           |
+| GLCLI_GROUP_VAR_FILE | .gitlab-groupvars.json      |
+| GLCLI_ENV_FILE       | .gitlab-envs.json           |
+| GLCLI_ID_FILE        | .gitlab.id                  |
+| GLCLI_GROUP_ID_FILE  | .gitlab.gid                 |
+| GLCLI_DEBUG_FILE     | debug.txt                   |
 
 Before using the application, you must first enter the project ID in the `.gitlab.id` file or using an export of projects.
 
