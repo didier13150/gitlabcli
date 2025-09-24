@@ -195,13 +195,13 @@ func (glcli *GLCli) Run() {
 	log.Printf("Fetching vars from gitlab with URL %s", glcli.Config.GitlabUrl)
 	err = glcli.vars.GetVarsFromGitlab()
 	if err != nil {
-		log.Fatal("Cannot fetch vars from gitlab")
+		log.Fatal("Cannot fetch vars from gitlab project")
 	}
 	if glcli.GroupId != "" {
 		log.Printf("Fetching group vars from gitlab with URL %s", glcli.Config.GitlabUrl)
 		err = glcli.vars.GetGroupVarsFromGitlab()
 		if err != nil {
-			log.Fatal("Cannot fetch vars from gitlab")
+			log.Print("Cannot fetch vars from gitlab group")
 		}
 	}
 	if glcli.Config.DebugMode {
