@@ -30,6 +30,7 @@ func main() {
 	var deleteIsActive = flag.Bool("delete", glcli.Config.DeleteMode, "Delete Gitlab var if not present in var file.")
 	var allProjects = flag.Bool("all-projects", false, "Export all projects, not only projects where I'm a membership.")
 	var simpleRequest = flag.Bool("full-projects-data", false, "Requesting full data about projects.")
+	var bootstrapIsActive = flag.Bool("bootstrap", glcli.Config.BootstrapMode, "Bootstrap varsfile and envsfile with templates")
 
 	flag.Usage = func() {
 		fmt.Print("Export variables from json file to project gitlab variables or vice versa\n\n")
@@ -61,6 +62,11 @@ func main() {
 	if *deleteIsActive {
 		log.Print("Delete mode is active")
 		glcli.Config.DeleteMode = true
+	}
+	if *bootstrapIsActive {
+		log.Print("Bootstrap mode is active")
+		glcli.Bootstrap()
+		return
 	}
 	if projectIdFile != nil {
 		glcli.Config.IdFile = *projectIdFile

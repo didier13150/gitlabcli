@@ -27,6 +27,7 @@ type GLCliConfig struct {
 	ExportMode        bool
 	ExportProjectMode bool
 	DeleteMode        bool
+	BootstrapMode     bool
 }
 
 type GLCli struct {
@@ -100,6 +101,7 @@ func NewGLCli() GLCli {
 	glcli.Config.ExportMode = false
 	glcli.Config.ExportProjectMode = false
 	glcli.Config.DeleteMode = false
+	glcli.Config.BootstrapMode = false
 
 	return glcli
 }
@@ -107,6 +109,37 @@ func NewGLCli() GLCli {
 func (glcli *GLCli) SetProjectParameters(allProjects bool, simpleRequest bool) {
 	glcli.projects.SimpleRequest = simpleRequest
 	glcli.projects.MembershipOnly = !allProjects
+}
+
+func (glcli *GLCli) Bootstrap() {
+	var varExample gitlablib.GitlabVarData
+	var envExample gitlablib.GitlabEnvData
+	varExample.Key = "VAR_KEY"
+	varExample.Value = "VAR_VALUE"
+	varExample.Env = "*"
+	varExample.IsRaw = true
+	varExample.Description = "Description of VAR_KEY"
+	glcli.vars.GitlabData = append(glcli.vars.GitlabData, varExample)
+	envExample.Name = "ENV_NAME"
+	envExample.Description = "Description of ENV_NAME"
+	envExample.State = "Started"
+	glcli.envs.GitlabData = append(glcli.envs.GitlabData, envExample)
+	f, err := os.OpenFile(glcli.Config.VarsFile, os.O_RDONLY, 0644)
+	if err == nil {
+		log.Fatal("Cannot bootstrap because var file exists.")
+	} else {
+		defer f.Close()
+	}
+	f, err = os.OpenFile(glcli.Config.EnvsFile, os.O_RDONLY, 0644)
+	if err == nil {
+		log.Fatal("Cannot bootstrap because env file exists.")
+	} else {
+		defer f.Close()
+	}
+
+	glcli.vars.ExportVars(glcli.Config.VarsFile)
+	glcli.envs.ExportEnvs(glcli.Config.EnvsFile)
+	log.Print("Exit now because bootstrap is done")
 }
 
 func (glcli *GLCli) Run() {
