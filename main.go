@@ -32,6 +32,7 @@ func main() {
 	var simpleRequest = flag.Bool("full-projects-data", false, "Requesting full data about projects.")
 
 	flag.Usage = func() {
+		fmt.Print("Export variables from json file to project gitlab variables or vice versa\n\n")
 		fmt.Printf("Usage: " + os.Args[0] + " [options]\n")
 		flag.PrintDefaults()
 	}
