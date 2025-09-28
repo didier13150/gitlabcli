@@ -26,11 +26,16 @@ func main() {
 	var debug = flag.Bool("debug", glcli.Config.DebugMode, "Enable debug mode")
 	var dryrun = flag.Bool("dryrun", glcli.Config.DryrunMode, "Run in dry-run mode (read only).")
 	var export = flag.Bool("export", glcli.Config.ExportMode, "Export current variables in var file.")
-	var exportProjectsOnly = flag.Bool("export-projects", glcli.Config.ExportProjectMode, "Export current projects in project file.")
+	var exportProjectsOnly = flag.Bool("export-projects", false, "Export current projects in project file.")
 	var deleteIsActive = flag.Bool("delete", glcli.Config.DeleteMode, "Delete Gitlab var if not present in var file.")
 	var allProjects = flag.Bool("all-projects", false, "Export all projects, not only projects where I'm a membership.")
 	var simpleRequest = flag.Bool("full-projects-data", false, "Requesting full data about projects.")
 	var bootstrapIsActive = flag.Bool("bootstrap", glcli.Config.BootstrapMode, "Bootstrap varsfile and envsfile with templates")
+	var addVarIsActive = flag.Bool("add-var", false, "Add variable to varsfile in interactive mode")
+	var addEnvIsActive = flag.Bool("add-env", false, "Add environment to envsfile in interactive mode")
+	var duplicateVarsInEnvFrom = flag.String("duplicate-from", "", "Duplicate all vars from specified env (Must be set with duplicate-to option).")
+	var duplicateVarsInEnvTo = flag.String("duplicate-to", "", "Duplicate all vars from env to specified env (Must be set with duplicate-from option).")
+	var adminIsActive = flag.Bool("admin", false, "Admin mode")
 
 	flag.Usage = func() {
 		fmt.Print("Export variables from json file to project gitlab variables or vice versa\n\n")
@@ -38,6 +43,9 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	var envFrom string
+	var envTo string
 
 	if *verbose {
 		log.Print("Verbose mode is active")
@@ -57,7 +65,6 @@ func main() {
 	}
 	if *exportProjectsOnly {
 		log.Print("Export projects requested")
-		glcli.Config.ExportProjectMode = true
 	}
 	if *deleteIsActive {
 		log.Print("Delete mode is active")
@@ -67,6 +74,22 @@ func main() {
 		log.Print("Bootstrap mode is active")
 		glcli.Bootstrap()
 		return
+	}
+	if *addVarIsActive {
+		log.Print("Add variable mode is active")
+		glcli.AddVar()
+		return
+	}
+	if *addEnvIsActive {
+		log.Print("Add environment mode is active")
+		glcli.AddEnv()
+		return
+	}
+	if duplicateVarsInEnvFrom != nil {
+		envFrom = *duplicateVarsInEnvFrom
+	}
+	if duplicateVarsInEnvTo != nil {
+		envTo = *duplicateVarsInEnvTo
 	}
 	if projectIdFile != nil {
 		glcli.Config.IdFile = *projectIdFile
@@ -101,6 +124,21 @@ func main() {
 	if remoteName != nil {
 		glcli.RemoteName = *remoteName
 	}
+	if *adminIsActive {
+		log.Print("Admin mode is active")
+	}
+	if envFrom != "" && envTo != "" {
+		log.Printf("Copy all variables from %s environment to %s one\n", envFrom, envTo)
+		glcli.CopyVars(envFrom, envTo)
+		return
+	}
 	glcli.SetProjectParameters(*allProjects, *simpleRequest)
-	glcli.Run()
+	glcli.Setup()
+	if *exportProjectsOnly {
+		glcli.ExportProjects()
+	} else if *adminIsActive {
+		glcli.AdminRun()
+	} else {
+		glcli.Run()
+	}
 }

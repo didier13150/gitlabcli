@@ -22,7 +22,6 @@ func TestGLCliConfig(t *testing.T) {
 	verbose := true
 	dryrun := true
 	export := true
-	exportProject := true
 	delete := true
 
 	config := GLCliConfig{}
@@ -40,7 +39,6 @@ func TestGLCliConfig(t *testing.T) {
 	config.VerboseMode = verbose
 	config.DryrunMode = dryrun
 	config.ExportMode = export
-	config.ExportProjectMode = exportProject
 	config.DeleteMode = delete
 
 	if config.GitlabUrl != url {
@@ -85,9 +83,6 @@ func TestGLCliConfig(t *testing.T) {
 	if config.ExportMode != export {
 		t.Errorf(`TestGLCliConfig(ExportMode) = %t, want %t`, config.ExportMode, export)
 	}
-	if config.ExportProjectMode != exportProject {
-		t.Errorf(`TestGLCliConfig(ExportProjectMode) = %t, want %t`, config.ExportProjectMode, exportProject)
-	}
 	if config.DeleteMode != delete {
 		t.Errorf(`TestGLCliConfig(DeleteMode) = %t, want %t`, config.DeleteMode, delete)
 	}
@@ -99,13 +94,12 @@ func TestGLCliExportProjects(t *testing.T) {
 	glcli.Config.GitlabUrl = "http://localhost:8080"
 	glcli.Config.TokenFile = "/tmp/glcli.token"
 	glcli.Config.ProjectsFile = "/tmp/glcli-projects.json"
-	glcli.Config.ExportProjectMode = true
 
 	err := os.WriteFile(glcli.Config.TokenFile, []byte("token"), 0644)
 	if err != nil {
 		t.Errorf(`TestGLCliExportProjects(write token file) = %s`, err)
 	}
-	glcli.Run()
+	glcli.ExportProjects()
 
 	// Check that export file have 48 projects(6 groups * 8 names in glsimulator)
 	projects := gitlablib.NewGitlabProject(glcli.Config.GitlabUrl, "token", false)

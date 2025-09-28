@@ -2,13 +2,13 @@
 
 The `glcli` program allows Gitlab variable and environment management, i.e., it synchronizes JSON files and Gitlab data. It can do this the other way around with the `-export` option.
 
-It uses the flat file format for the project ID and its groupe ID (`.gitlab.id` and `.gitlab.gid` files) and the JSON format for environments (`.gitlab.env.json` file) and variables (`.gitlab.var.json` file).
+It uses the flat file format for the project ID and its groupe ID (`.gitlab.id` and `.gitlab.gid` files) and the JSON format for environments (`.gitlab-envs.json` file) and variables (`.gitlab-vars.json` file).
 
 It requires the Gitlab URL and a valid token for identification. It is not possible to pass the token directly to the application; you can only specify a file containing this token for security reasons.
 
 The application also has a read-only mode, in which only read calls are made: `-dryrun`
 
-The application can also get the project ID from a project export data (`.gitlab.project.json` file)
+The application can also get the project ID from a project export data (`.gitlab-projects.json` file)
 
 ## Installation
 
@@ -179,7 +179,7 @@ Before using the application, you must first enter the project ID in the `.gitla
 
 ### Export
 
-Exports existing environments and variables from Gitlab into files. This creates the `.gitlab.env.json` and `.gitlab.var.json` files. If these files already exist, they will be overwritten.
+Exports existing environments and variables from Gitlab into files. This creates the `.gitlab-envs.json` and `.gitlab-vars.json` files. If these files already exist, they will be overwritten.
 
 [ Gitlab ] ---> [ Files ]
 
@@ -189,7 +189,7 @@ Exports existing environments and variables from Gitlab into files. This creates
 
 ### Import
 
-Imports environments and variables from the `.gitlab.env.json` and `.gitlab.var.json` files into Gitlab. By default, Gitlab variables not present in the files are not deleted.
+Imports environments and variables from the `.gitlab-envs.json` and `.gitlab-vars.json` files into Gitlab. By default, Gitlab variables not present in the files are not deleted.
 
 [ Files ] ---> [ Gitlab ]
 
@@ -206,12 +206,12 @@ To delete extra variables, add the `-delete` option.
 1. Since there are no variable or environment, we can simply create the files (there's nothing to export).
 
     ```
-    echo -n '[]' > .gitlab.env.json
-    echo -n '[]' > .gitlab.var.json
+    echo -n '[]' > .gitlab-envs.json
+    echo -n '[]' > .gitlab-vars.json
     ```
 2. Modify the files to specify the variables and environments. Add an environment named **production** and three **variables**, one of which is present in all environments, but overridden for the production environment.
 
-    * `.gitlab.env.json` file 
+    * `.gitlab-envs.json` file 
         
         ``` 
         [ 
@@ -224,7 +224,7 @@ To delete extra variables, add the `-delete` option.
           } 
         ] 
         ``` 
-    * `.gitlab.var.json` file 
+    * `.gitlab-vars.json` file 
         
         ``` 
         [ 
@@ -308,7 +308,7 @@ To delete extra variables, add the `-delete` option.
     2025/08/02 13:08:19 Export current Gitlab envs to .gitlab-envs.json file 
     2025/08/02 13:08:19 Exit now because export is done 
     ```
-5. Deleting the variable **GLCLI_VAR_LOCK_PREFIX** in the `.gitlab.var.json` file 
+5. Deleting the variable **GLCLI_VAR_LOCK_PREFIX** in the `.gitlab-vars.json` file 
 
     ``` 
     [ 
