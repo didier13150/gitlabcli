@@ -6,28 +6,29 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/didier13150/gitlablib"
 )
 
 type GLCliConfig struct {
-	GitlabUrl         string
-	IdFile            string
-	GroupIdFile       string
-	VarsFile          string
-	GroupVarsFile     string
-	EnvsFile          string
-	ProjectsFile      string
-	DebugFile         string
-	TokenFile         string
-	RemoteName        string
-	DebugMode         bool
-	VerboseMode       bool
-	DryrunMode        bool
-	ExportMode        bool
-	ExportProjectMode bool
-	DeleteMode        bool
-	BootstrapMode     bool
+	GitlabUrl      string
+	IdFile         string
+	GroupIdFile    string
+	VarsFile       string
+	GroupVarsFile  string
+	GlobalVarsFile string
+	EnvsFile       string
+	ProjectsFile   string
+	DebugFile      string
+	TokenFile      string
+	RemoteName     string
+	DebugMode      bool
+	VerboseMode    bool
+	DryrunMode     bool
+	ExportMode     bool
+	DeleteMode     bool
+	BootstrapMode  bool
 }
 
 type GLCli struct {
@@ -69,6 +70,11 @@ func NewGLCli() GLCli {
 	} else {
 		glcli.Config.GroupVarsFile = ".gitlab-groupvars.json"
 	}
+	if len(os.Getenv("GLCLI_GLOBAL_VAR_FILE")) > 0 {
+		glcli.Config.GlobalVarsFile = os.Getenv("GLCLI_GLOBAL_VAR_FILE")
+	} else {
+		glcli.Config.GlobalVarsFile = ".gitlab-globalvars.json"
+	}
 	if len(os.Getenv("GLCLI_ENV_FILE")) > 0 {
 		glcli.Config.EnvsFile = os.Getenv("GLCLI_ENV_FILE")
 	} else {
@@ -99,7 +105,6 @@ func NewGLCli() GLCli {
 	glcli.Config.VerboseMode = false
 	glcli.Config.DryrunMode = false
 	glcli.Config.ExportMode = false
-	glcli.Config.ExportProjectMode = false
 	glcli.Config.DeleteMode = false
 	glcli.Config.BootstrapMode = false
 
@@ -109,6 +114,186 @@ func NewGLCli() GLCli {
 func (glcli *GLCli) SetProjectParameters(allProjects bool, simpleRequest bool) {
 	glcli.projects.SimpleRequest = simpleRequest
 	glcli.projects.MembershipOnly = !allProjects
+}
+
+func (glcli *GLCli) AddVar() {
+	var newvar gitlablib.GitlabVarData
+	scanner := bufio.NewScanner(os.Stdin)
+
+	varfile, err := os.OpenFile(glcli.Config.VarsFile, os.O_RDONLY, 0644)
+	if err == nil {
+		err = varfile.Close()
+		if err != nil {
+			log.Fatalln("Cannot close var file")
+		}
+		glcli.vars.ImportVars(glcli.Config.VarsFile)
+	}
+
+	fmt.Print("Variable key []: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newvar.Key = strings.TrimSpace(strings.ReplaceAll(scanner.Text(), " ", "_"))
+	} else {
+		log.Fatal("Key cannot be empty\n")
+	}
+
+	fmt.Print("Variable value ['']: ")
+	scanner.Scan()
+	newvar.Value = scanner.Text()
+
+	fmt.Print("Variable environment ['*']: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newvar.Env = strings.TrimSpace(scanner.Text())
+	} else {
+		newvar.Env = "*"
+	}
+
+	fmt.Print("Variable description [null]: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newvar.Description = scanner.Text()
+	}
+
+	fmt.Print("Variable is raw [true]: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newvar.IsRaw, _ = strconv.ParseBool(strings.TrimSpace(string(scanner.Text())))
+	} else {
+		newvar.IsRaw = true
+	}
+
+	fmt.Print("Variable is protected [false]: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newvar.IsProtected, _ = strconv.ParseBool(strings.TrimSpace(string(scanner.Text())))
+	} else {
+		newvar.IsProtected = false
+	}
+
+	fmt.Print("Variable is hidden [false]: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newvar.IsHidden, _ = strconv.ParseBool(strings.TrimSpace(string(scanner.Text())))
+	} else {
+		newvar.IsHidden = false
+	}
+
+	fmt.Print("Variable is masked [false]: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newvar.IsMasked, _ = strconv.ParseBool(strings.TrimSpace(string(scanner.Text())))
+	} else {
+		newvar.IsMasked = false
+	}
+
+	glcli.vars.GitlabData = append(glcli.vars.FileData, newvar)
+	glcli.vars.ExportVars(glcli.Config.VarsFile)
+	log.Print("Exit now because var is added to vars file")
+}
+
+func (glcli *GLCli) AddEnv() {
+	var newenv gitlablib.GitlabEnvData
+	scanner := bufio.NewScanner(os.Stdin)
+
+	envfile, err := os.OpenFile(glcli.Config.EnvsFile, os.O_RDONLY, 0644)
+	if err == nil {
+		err = envfile.Close()
+		if err != nil {
+			log.Fatalln("Cannot close env file")
+		}
+		glcli.envs.ImportEnvs(glcli.Config.EnvsFile)
+	}
+
+	fmt.Print("Environment name []: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newenv.Name = strings.TrimSpace(strings.ReplaceAll(scanner.Text(), " ", "_"))
+	} else {
+		log.Fatal("Name cannot be empty\n")
+	}
+
+	fmt.Print("Environment description [null]: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newenv.Description = scanner.Text()
+	}
+
+	fmt.Print("Environment URL [null]: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newenv.Url = scanner.Text()
+	}
+
+	fmt.Print("Environment state ['available']: ")
+	scanner.Scan()
+	if scanner.Text() != "" {
+		newenv.State = strings.TrimSpace(scanner.Text())
+	} else {
+		newenv.State = "available"
+	}
+
+	glcli.envs.GitlabData = append(glcli.envs.FileData, newenv)
+	glcli.envs.ExportEnvs(glcli.Config.EnvsFile)
+	log.Print("Exit now because env is added to envs file")
+}
+
+func (glcli *GLCli) CopyVars(envfrom string, envto string) {
+	var newvar gitlablib.GitlabVarData
+
+	varfile, err := os.OpenFile(glcli.Config.VarsFile, os.O_RDONLY, 0644)
+	if err == nil {
+		err = varfile.Close()
+		if err != nil {
+			log.Fatalln("Cannot close var file")
+		}
+		glcli.vars.ImportVars(glcli.Config.VarsFile)
+	}
+	envfile, err := os.OpenFile(glcli.Config.EnvsFile, os.O_RDONLY, 0644)
+	if err == nil {
+		err = envfile.Close()
+		if err != nil {
+			log.Fatalln("Cannot close env file")
+		}
+		glcli.envs.ImportEnvs(glcli.Config.EnvsFile)
+	}
+
+	// Check if envto exists or create it (in file) before processing
+	found := false
+	for _, env := range glcli.envs.FileData {
+		if env.Name == envto {
+			found = true
+		}
+	}
+	if !found {
+		// Add env to
+		var newenv gitlablib.GitlabEnvData
+		newenv.Name = envto
+		glcli.envs.GitlabData = append(glcli.envs.FileData, newenv)
+		glcli.envs.ExportEnvs(glcli.Config.EnvsFile)
+	}
+
+	var toAdd []gitlablib.GitlabVarData
+	for _, variable := range glcli.vars.FileData {
+		if variable.Env == envfrom {
+			log.Printf("Found %s (%s)", variable.Key, variable.Env)
+			found := false
+			for _, var2 := range glcli.vars.FileData {
+				if var2.Env == envto && var2.Key == variable.Key {
+					found = true
+				}
+			}
+			if !found {
+				newvar = variable
+				newvar.Env = envto
+				toAdd = append(toAdd, newvar)
+			}
+		}
+	}
+
+	glcli.vars.GitlabData = append(glcli.vars.FileData, toAdd...)
+	glcli.vars.ExportVars(glcli.Config.VarsFile)
+	log.Printf("Exit now because vars from %s env are copied to %s env", envfrom, envto)
 }
 
 func (glcli *GLCli) Bootstrap() {
@@ -122,19 +307,29 @@ func (glcli *GLCli) Bootstrap() {
 	glcli.vars.GitlabData = append(glcli.vars.GitlabData, varExample)
 	envExample.Name = "ENV_NAME"
 	envExample.Description = "Description of ENV_NAME"
-	envExample.State = "Started"
+	envExample.State = "available"
 	glcli.envs.GitlabData = append(glcli.envs.GitlabData, envExample)
 	f, err := os.OpenFile(glcli.Config.VarsFile, os.O_RDONLY, 0644)
 	if err == nil {
 		log.Fatal("Cannot bootstrap because var file exists.")
 	} else {
-		defer f.Close()
+		defer func() {
+			err := f.Close()
+			if err != nil {
+				log.Fatalln("Cannot close file", err)
+			}
+		}()
 	}
 	f, err = os.OpenFile(glcli.Config.EnvsFile, os.O_RDONLY, 0644)
 	if err == nil {
 		log.Fatal("Cannot bootstrap because env file exists.")
 	} else {
-		defer f.Close()
+		defer func() {
+			err := f.Close()
+			if err != nil {
+				log.Fatalln("Cannot close file", err)
+			}
+		}()
 	}
 
 	glcli.vars.ExportVars(glcli.Config.VarsFile)
@@ -142,8 +337,7 @@ func (glcli *GLCli) Bootstrap() {
 	log.Print("Exit now because bootstrap is done")
 }
 
-func (glcli *GLCli) Run() {
-
+func (glcli *GLCli) Setup() {
 	glcli.token = gitlablib.ReadFromFile(glcli.Config.TokenFile, "token", glcli.Config.VerboseMode)
 	glcli.vars = gitlablib.NewGitlabVar(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
 	glcli.envs = gitlablib.NewGitlabEnv(glcli.Config.GitlabUrl, glcli.token, glcli.Config.VerboseMode)
@@ -157,17 +351,97 @@ func (glcli *GLCli) Run() {
 		glcli.vars.DryrunMode = glcli.Config.DryrunMode
 		glcli.envs.DryrunMode = glcli.Config.DryrunMode
 	}
+}
 
-	if glcli.Config.ExportProjectMode {
-		log.Printf("Export current Gitlab projects to %s file", glcli.Config.ProjectsFile)
-		err := glcli.projects.GetProjectsFromGitlab()
-		if err != nil {
-			log.Fatal("Cannot fetch projects from gitlab")
-		}
-		glcli.projects.ExportProjects(glcli.Config.ProjectsFile)
-		log.Print("Exit now because project export is done")
+func (glcli *GLCli) ExportProjects() {
+	log.Printf("Export current Gitlab projects to %s file", glcli.Config.ProjectsFile)
+	err := glcli.projects.GetProjectsFromGitlab()
+	if err != nil {
+		log.Fatal("Cannot fetch projects from gitlab")
+	}
+	glcli.projects.ExportProjects(glcli.Config.ProjectsFile)
+	log.Print("Exit now because project export is done")
+}
+
+func (glcli *GLCli) AdminRun() {
+	log.Printf("Fetching global vars from gitlab with URL %s", glcli.Config.GitlabUrl)
+	err := glcli.vars.GetGlobalVarsFromGitlab()
+	if err != nil {
+		log.Fatal("Cannot fetch global vars from gitlab project")
+	}
+	// log.Printf("Fetching envs from gitlab with URL %s", glcli.Config.GitlabUrl)
+	// err = glcli.envs.GetEnvsFromGitlab()
+	// if err != nil {
+	// 	log.Fatal("Cannot fetch envs from gitlab")
+	// }
+
+	if glcli.Config.DebugMode {
+		glcli.debug()
+	}
+	if glcli.Config.ExportMode {
+		log.Printf("Export current Gitlab global vars to %s file", glcli.Config.GlobalVarsFile)
+		glcli.vars.ExportGlobalVars(glcli.Config.GlobalVarsFile)
+		// log.Printf("Export current Gitlab envs to %s file", glcli.Config.EnvsFile)
+		// glcli.envs.ExportEnvs(glcli.Config.EnvsFile)
+		log.Print("Exit now because export is done")
 		return
 	}
+	globalvarfile, err := os.OpenFile(glcli.Config.GlobalVarsFile, os.O_RDONLY, 0644)
+	if err != nil {
+		log.Fatal("Nothing to do because global var file cannot be found.")
+		os.Exit(1)
+	}
+	err = globalvarfile.Close()
+	if err != nil {
+		log.Fatalln("Cannot close global var file (test)")
+	}
+
+	glcli.vars.ImportGlobalVars(glcli.Config.GlobalVarsFile)
+
+	toAdd, toDelete, toUpdate := glcli.vars.CompareGlobalVar()
+	if glcli.Config.VerboseMode {
+		log.Print("Compare the group variables between those present on GitLab and those in variable file")
+	}
+	if glcli.Config.DryrunMode {
+		log.Print("Exit now because dryrun mode is active")
+		return
+	}
+	for _, item := range toAdd {
+		err = glcli.vars.InsertGlobalVar(item)
+		if err != nil {
+			log.Fatalf("Cannot insert global var %s", item.Key)
+		}
+	}
+	if len(toAdd) == 0 {
+		log.Print("No global var to insert")
+	}
+	for _, item := range toUpdate {
+		err = glcli.vars.UpdateGlobalVar(item)
+		if err != nil {
+			log.Fatalf("Cannot update global var %s", item.Key)
+		}
+	}
+	if len(toUpdate) == 0 {
+		log.Print("No global var to update")
+	}
+	if len(toDelete) == 0 {
+		log.Print("No global var to delete")
+	}
+	if glcli.Config.DeleteMode {
+		for _, item := range toDelete {
+			err = glcli.vars.DeleteGlobalVar(item)
+			if err != nil {
+				log.Fatalf("Cannot delete global var %s", item.Key)
+			}
+		}
+	} else {
+		if len(toDelete) > 0 {
+			log.Printf("%d global var(s) may be deleted, but delete flag in command line is not set", len(toDelete))
+		}
+	}
+}
+
+func (glcli *GLCli) Run() {
 
 	projectfile, err := os.OpenFile(glcli.Config.ProjectsFile, os.O_RDONLY, 0644)
 	if err == nil {
@@ -443,6 +717,14 @@ func (glcli GLCli) debug() {
 		log.Fatalln("Cannot write into debug file")
 	}
 	_, err = fmt.Fprintf(w, "%v\n", glcli.vars.GitlabGroupData)
+	if err != nil {
+		log.Fatalln("Cannot write into debug file")
+	}
+	_, err = fmt.Fprint(w, "============== Global Vars =============\n")
+	if err != nil {
+		log.Fatalln("Cannot write into debug file")
+	}
+	_, err = fmt.Fprintf(w, "%v\n", glcli.vars.GitlabGlobalData)
 	if err != nil {
 		log.Fatalln("Cannot write into debug file")
 	}

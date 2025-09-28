@@ -3,7 +3,7 @@ module github.com/didier13150/gitlabcli
 go 1.21.0
 
 require (
-	github.com/didier13150/gitlablib v0.1.2
+	github.com/didier13150/gitlablib v0.2.0
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
